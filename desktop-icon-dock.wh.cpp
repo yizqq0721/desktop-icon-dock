@@ -4,7 +4,7 @@
 // @name:zh-CN      桌面图标 Dock
 // @description     Turns your desktop icons into a centered macOS-style dock with Liquid Glass visuals
 // @description:zh-CN 将桌面图标变成居中的 macOS 风格 Dock，带液态玻璃质感
-// @version         1.0.2
+// @version         1.0.3
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -282,6 +282,7 @@ struct LayoutMetrics {
     int panelTop = 0;
     int panelBottom = 0;
     int iconBottom = 0;
+    int iconBottomPad = 4;
     int panelBaseWidth = 0;
     int panelMaxWidth = 0;
     int windowWidth = 0;
@@ -600,15 +601,41 @@ std::shared_ptr<Bitmap> CopyHBitmapToBitmap(HBITMAP hbmp) {
     if (!GetObjectW(hbmp, sizeof(bm), &bm) || bm.bmWidth <= 0 || bm.bmHeight <= 0) {
         return nullptr;
     }
-    std::unique_ptr<Bitmap> source;
-    if (bm.bmBits && bm.bmBitsPixel == 32 && bm.bmWidthBytes > 0) {
-        source = std::make_unique<Bitmap>(bm.bmWidth, bm.bmHeight, bm.bmWidthBytes,
-                                          PixelFormat32bppPARGB, (BYTE*)bm.bmBits);
+    std::unique_ptr<Bitmap> owned;
+    if (bm.bmBits && bm.bmBitsPixel == 32 && bm.bmWidthBytes >= bm.bmWidth * 4) {
+        // Bitmaps returned by IShellItemImageFactory are bottom-up DIBs, so
+        // copy the rows into a top-down GDI+ bitmap instead of wrapping the
+        // scanlines directly (which would render the icon upside down).
+        owned = std::make_unique<Bitmap>(bm.bmWidth, bm.bmHeight,
+                                         PixelFormat32bppPARGB);
+        if (!owned || owned->GetLastStatus() != Ok) return nullptr;
+        BitmapData data{};
+        Rect rect(0, 0, bm.bmWidth, bm.bmHeight);
+        if (owned->LockBits(&rect, ImageLockModeWrite, PixelFormat32bppPARGB,
+                            &data) != Ok) {
+            return nullptr;
+        }
+        bool bottomUp = true;
+        DIBSECTION dib{};
+        if (GetObjectW(hbmp, sizeof(dib), &dib) == sizeof(dib) &&
+            dib.dsBmih.biSize == sizeof(BITMAPINFOHEADER)) {
+            bottomUp = dib.dsBmih.biHeight > 0;
+        }
+        size_t rowBytes = (size_t)bm.bmWidth * 4;
+        for (INT y = 0; y < bm.bmHeight; ++y) {
+            const BYTE* srcRow = (const BYTE*)bm.bmBits +
+                                 (size_t)(bottomUp ? bm.bmHeight - 1 - y : y) *
+                                     bm.bmWidthBytes;
+            memcpy((BYTE*)data.Scan0 + (size_t)y * data.Stride, srcRow, rowBytes);
+        }
+        owned->UnlockBits(&data);
     } else {
-        source.reset(Bitmap::FromHBITMAP(hbmp, nullptr));
+        std::unique_ptr<Bitmap> source(Bitmap::FromHBITMAP(hbmp, nullptr));
+        if (!source || source->GetLastStatus() != Ok) return nullptr;
+        owned.reset(source.release());
     }
-    if (!source || source->GetLastStatus() != Ok) return nullptr;
-    return CopyToOwnedBitmap(source.get());
+    if (owned->GetLastStatus() != Ok) return nullptr;
+    return std::shared_ptr<Bitmap>(owned.release());
 }
 
 std::shared_ptr<Bitmap> LoadShellIcon(IShellItem* item, const std::wstring& key) {
@@ -943,7 +970,8 @@ void ComputeLayout() {
                             g_layout.panelHeight + g_layout.glowMargin;
     g_layout.panelTop = g_layout.glowMargin + g_layout.labelAreaHeight;
     g_layout.panelBottom = g_layout.panelTop + g_layout.panelHeight;
-    g_layout.iconBottom = g_layout.panelBottom - g_layout.panelPadY;
+    g_layout.iconBottomPad = std::max(3, (int)lround(g_layout.iconPx * 0.07));
+    g_layout.iconBottom = g_layout.panelBottom - g_layout.iconBottomPad;
 
     double pitch = g_layout.iconPx + g_layout.spacingPx;
     for (int i = 0; i < count; ++i) {
