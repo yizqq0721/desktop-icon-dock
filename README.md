@@ -13,15 +13,15 @@
 - **可选液态玻璃面板**：关闭「透明背景」后启用。面板包含壁纸模糊、乳白玻璃、高光描边和悬停光晕；背景从 Dock 上方的屏幕区域采样，支持 Wallpaper Engine 等动态壁纸。
 - **名称标签**：悬停时在图标上方显示名称胶囊；透明背景下标签位置固定，不会随图标放大而跳动。
 - **原生交互**：左键单击打开项目；右键弹出与桌面一致的资源管理器原生菜单（新建快捷方式、属性、删除等）。
-- **自动同步桌面**：新增、删除、重命名、移动桌面项目会自动出现在 Dock 中，顺序与桌面网格位置一致。
-- **隐藏原始桌面图标**：默认隐藏系统桌面上的原图标，只保留 Dock；卸载或禁用模组时自动恢复。
-- **增量图标缓存**：按项目路径缓存 256px 图标，只有新项目需要重新提取，刷新快、不闪烁。
+- **自动同步桌面**：通过 shell 变更通知监听桌面与公共桌面文件夹，新增、删除、重命名和移动会立即反映到 Dock，顺序与桌面网格位置一致。
+- **在内存中隐藏原始桌面图标**：Dock 运行期间隐藏桌面的列表视图窗口，不修改 Explorer 的任何设置或注册表项；卸载模组后图标自动恢复，重启 Explorer 也不会留下影响。
+- **按需加载图标并清理缓存**：图标按显示大小提取并按项目路径缓存，项目消失后清除对应缓存，收到图标更新通知时自动刷新。
 
 ## 工作方式
 
-Dock 不是重排系统桌面图标，而是读取桌面文件夹（Shell 的 IFolderView）内容后自行绘制，同时用 shell 命令隐藏原图标。
+Dock 不是重排系统桌面图标，而是读取桌面文件夹（Shell 的 IFolderView）内容后自行绘制；原图标通过隐藏桌面列表视图窗口在内存中隐藏（`ShowWindow(SW_HIDE)`），不会改动「显示桌面图标」设置。
 
-- **同步频率**：约每 3 秒检查一次桌面项目；在 Dock 右键菜单中执行命令后约 0.7 秒立即刷新。
+- **同步**：注册桌面与公共桌面的 shell 变更通知，变更后短暂防抖再重建；每 30 秒的慢速检查用于兜底排序变化等没有通知的情况。
 - **排序**：按桌面网格坐标先上下、后左右排序，因此 Dock 顺序与桌面排列一致，新快捷方式会出现在对应的位置。
 - **布局**：水平居中于主显示器底部、任务栏上方；图标增多时面板自动变宽，静止时图标垂直居中。
 - **性能**：透明背景模式下用 50ms 间隔轮询鼠标位置，以支持图标间隙的悬停放大；空闲时 CPU 占用可忽略。
@@ -38,99 +38,27 @@ Dock 不是重排系统桌面图标，而是读取桌面文件夹（Shell 的 IF
 | 平滑速度 | 16 | 数值越大越跟手，越小越柔和 |
 | 底部偏移 | 10 | Dock 与任务栏之间的间距（100% DPI 像素） |
 | 透明背景 | 开 | 默认只显示图标；关闭后使用液态玻璃面板 |
-| 玻璃不透明度 | 24% | 仅玻璃模式：乳白玻璃的强度 |
-| 玻璃模糊 | 20 | 仅玻璃模式：背景模糊强度 |
+| 玻璃不透明度 | 24% | 仅玻璃模式（关闭透明背景）时生效：乳白玻璃的强度 |
+| 玻璃模糊 | 20 | 仅玻璃模式（关闭透明背景）时生效：背景模糊强度 |
 | 显示名称 | 开 | 悬停时显示名称胶囊 |
-| 隐藏原始桌面图标 | 开 | 隐藏系统桌面图标，卸载时恢复 |
+| 隐藏原始桌面图标 | 开 | 在内存中隐藏桌面列表视图，不修改系统设置；卸载时恢复 |
 | 排除项目 | 空 | 逗号分隔的显示名，匹配的项目不会进入 Dock |
-| 背景刷新间隔 | 20 秒 | 仅玻璃模式：重新采样玻璃背景的间隔，0 表示不刷新 |
+| 背景刷新间隔 | 20 秒 | 仅玻璃模式：重新采样玻璃背景的间隔，0 表示不自动刷新 |
 
 ## 兼容性与限制
 
-- 仅支持 x86-64 的 Windows 10 / 11，通过 Windhawk 注入 explorer.exe。
+- 仅支持 x86-64 的 Windows 10 / 11，通过 Windhawk 注入 explorer.exe，且只在 shell 进程里运行。
 - 目前仅支持主显示器；Dock 固定在主显示器底部、任务栏上方。
 - Dock 是位于普通窗口下方的分层窗口：全屏应用或其它窗口会盖住它，这是预期行为。
 - 透明背景模式下，窗口透明像素点击穿透，图标本身仍可正常点击。
 
 ## 故障排查
 
-- **卸载后桌面图标没有恢复**：在桌面右键 → 查看 → 勾选「显示桌面图标」；或重新加载模组后再卸载。
-- **Explorer 崩溃后 Dock 消失或图标仍隐藏**：模组会随 explorer.exe 自动重新加载；若原图标仍隐藏，使用上面的方法恢复。
-- **新快捷方式没有立即出现**：最多等待约 3 秒；在 Dock 右键菜单中创建的项目约 0.7 秒出现。
+- **Explorer 重启后 Dock 消失**：模组会随 explorer.exe 重新加载，Dock 通常在一秒内恢复。
+- **新快捷方式没有立即出现**：桌面变更通过 shell 通知同步，通常一秒内出现；30 秒兜底检查覆盖排序变化等特殊情况。
 - **修改设置后未生效**：保存设置即自动重载并重建，无需重启 Explorer。
 - **某个项目不想显示**：在「排除项目」中填入它的显示名（逗号分隔）。
-*/
-// ==/WindhawkModReadme==
 
-// ==WindhawkModSettings==
-/*
-- IconSize: 48
-  $name: Icon size
-  $name:zh-CN: 图标大小
-  $description: Base icon size in pixels (at 100% DPI scaling)
-  $description:zh-CN: 图标的基础像素大小（100% DPI 缩放时）
-- Spacing: 10
-  $name: Icon spacing
-  $name:zh-CN: 图标间距
-  $description: Gap between icons at rest, in pixels
-  $description:zh-CN: 静止状态下图标之间的像素间距
-- MaxScale: 175
-  $name: Maximum scale (%)
-  $name:zh-CN: 最大放大比例（%）
-  $description: How large the hovered icon grows (175 = 1.75x)
-  $description:zh-CN: 鼠标悬停时图标的最大放大倍数（175 = 1.75 倍）
-- EffectRadius: 160
-  $name: Effect radius
-  $name:zh-CN: 效果半径
-  $description: Distance from the cursor where magnification fades out, in pixels
-  $description:zh-CN: 放大效果从光标向外衰减的距离（像素）
-- SpacingFactor: 60
-  $name: Neighbor spread (%)
-  $name:zh-CN: 相邻扩散（%）
-  $description: How much neighboring icons move aside while magnifying
-  $description:zh-CN: 放大时相邻图标向外让位的程度
-- Smoothing: 16
-  $name: Smoothing speed
-  $name:zh-CN: 平滑速度
-  $description: Higher is snappier, lower is softer
-  $description:zh-CN: 数值越大越跟手，越小越柔和
-- BottomOffset: 10
-  $name: Bottom offset
-  $name:zh-CN: 底部偏移
-  $description: Gap between the dock and the taskbar, in pixels
-  $description:zh-CN: Dock 与任务栏之间的间距（像素）
-- TransparentBackground: true
-  $name: Transparent background
-  $name:zh-CN: 透明背景
-  $description: Show only the icons and skip the glass panel
-  $description:zh-CN: 只显示图标，不使用玻璃背景
-- GlassOpacity: 24
-  $name: Glass opacity (%)
-  $name:zh-CN: 玻璃不透明度（%）
-  $description: Strength of the milky glass tint
-  $description:zh-CN: 玻璃乳白色调的强度
-- GlassBlur: 20
-  $name: Glass blur
-  $name:zh-CN: 玻璃模糊
-  $description: Backdrop blur strength
-  $description:zh-CN: 背景模糊强度
-- ShowLabels: true
-  $name: Show labels
-  $name:zh-CN: 显示名称
-  $description: Show the name of the hovered item in a floating glass pill
-  $description:zh-CN: 悬停时在浮动玻璃标签中显示名称
-- HideDesktopIcons: true
-  $name: Hide original desktop icons
-  $name:zh-CN: 隐藏原始桌面图标
-  $description: Hide the original desktop icons while the dock is active
-  $description:zh-CN: 启用 Dock 时隐藏桌面上的原始图标
-- ExcludeItems: ""
-  $name: Excluded items
-  $name:zh-CN: 排除项目
-  $description: Comma separated display names to keep out of the dock
-  $description:zh-CN: 用逗号分隔的显示名称，匹配的项目不会出现在 Dock 中
-- BackdropRefreshSeconds: 20
-  $name: Backdrop refresh interval (s)
-  $name:zh-CN: 背景刷新间隔（秒）
-  $description: How often the blurred glass backdrop is re-sampled
-  $description:zh-CN: 多久重新采样一次玻璃背景
+## 源码
+
+`desktop-icon-dock.wh.cpp` 是本模组的 Windhawk 源码，也可直接在 Windhawk 中作为本地模组加载。
