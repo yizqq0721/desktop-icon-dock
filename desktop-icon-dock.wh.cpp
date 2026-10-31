@@ -4,7 +4,7 @@
 // @name:zh-CN      桌面图标 Dock
 // @description     Turns your desktop icons into a centered macOS-style dock with Liquid Glass visuals
 // @description:zh-CN 将桌面图标变成居中的 macOS 风格 Dock，带液态玻璃质感
-// @version         1.0.5
+// @version         1.0.6
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -225,6 +225,8 @@ constexpr UINT_PTR kTimerAnimation = 1;
 constexpr UINT_PTR kTimerMaintenance = 2;
 constexpr UINT_PTR kTimerRefresh = 3;
 constexpr UINT_PTR kTimerTestQuit = 4;
+constexpr UINT_PTR kTimerHoverPoll = 5;
+constexpr int kHoverPollMs = 50;
 constexpr int kIconRequestPx = 256;
 constexpr int kCheckDesktopItemsSeconds = 3;
 constexpr UINT kDesktopIconsToggleCommand = 0x7402;
@@ -334,6 +336,7 @@ double g_lastMouseX = 0.0;
 bool g_mouseXValid = false;
 int g_hoverIndex = -1;
 bool g_animationTimerRunning = false;
+bool g_hoverPollRunning = false;
 bool g_trackingMouse = false;
 std::chrono::steady_clock::time_point g_lastTickTime;
 std::chrono::steady_clock::time_point g_lastItemCheckTime;
@@ -1444,6 +1447,42 @@ void EnsureAnimationTimer() {
     }
 }
 
+bool IsPointerOverDock(POINT screenPoint) {
+    HWND under = WindowFromPoint(screenPoint);
+    if (!under) return false;
+    bool overDock = (under == g_hwnd);
+    if (!overDock && g_settings.transparentBackground) {
+        // Fully transparent pixels are click-through, so accept the desktop
+        // windows underneath as hovering the dock area.
+        wchar_t className[64] = L"";
+        if (GetClassNameW(under, className, ARRAYSIZE(className)) > 0) {
+            overDock = !_wcsicmp(className, L"Progman") ||
+                       !_wcsicmp(className, L"WorkerW") ||
+                       !_wcsicmp(className, L"SHELLDLL_DefView") ||
+                       !_wcsicmp(className, L"SysListView32");
+        }
+    }
+    if (!overDock) return false;
+    POINT clientPoint = screenPoint;
+    ScreenToClient(g_hwnd, &clientPoint);
+    RECT hoverRect = PanelClientRect();
+    InflateRect(&hoverRect, (int)lround(10 * g_dpiScale),
+                (int)lround(10 * g_dpiScale) + g_layout.labelAreaHeight);
+    return PtInRect(&hoverRect, clientPoint) != FALSE;
+}
+
+void UpdateHoverPollTimer() {
+    if (!g_hwnd) return;
+    bool wantPoll = g_settings.transparentBackground && g_dockShown;
+    if (wantPoll && !g_hoverPollRunning) {
+        SetTimer(g_hwnd, kTimerHoverPoll, kHoverPollMs, nullptr);
+        g_hoverPollRunning = true;
+    } else if (!wantPoll && g_hoverPollRunning) {
+        KillTimer(g_hwnd, kTimerHoverPoll);
+        g_hoverPollRunning = false;
+    }
+}
+
 bool UpdateAnimation() {
     if (g_items.empty() || !g_hwnd) return false;
 
@@ -1454,26 +1493,9 @@ bool UpdateAnimation() {
 
     POINT screenPoint{};
     GetCursorPos(&screenPoint);
-    HWND under = WindowFromPoint(screenPoint);
     POINT clientPoint = screenPoint;
     ScreenToClient(g_hwnd, &clientPoint);
-
-    RECT hoverRect = PanelClientRect();
-    InflateRect(&hoverRect, (int)lround(10 * g_dpiScale),
-                (int)lround(10 * g_dpiScale) + g_layout.labelAreaHeight);
-    bool pointerOverUs = (under == g_hwnd);
-    if (!pointerOverUs && g_settings.transparentBackground && under) {
-        // Fully transparent pixels are click-through, so accept the desktop
-        // windows underneath as hovering the dock area.
-        wchar_t className[64] = L"";
-        if (GetClassNameW(under, className, ARRAYSIZE(className)) > 0) {
-            pointerOverUs = !_wcsicmp(className, L"Progman") ||
-                            !_wcsicmp(className, L"WorkerW") ||
-                            !_wcsicmp(className, L"SHELLDLL_DefView") ||
-                            !_wcsicmp(className, L"SysListView32");
-        }
-    }
-    bool inside = pointerOverUs && PtInRect(&hoverRect, clientPoint) != FALSE;
+    bool inside = IsPointerOverDock(screenPoint);
 
     if (inside) {
         g_lastMouseX = clientPoint.x;
@@ -1769,6 +1791,7 @@ bool RebuildFromDesktop(bool force) {
         CaptureBackdrop();
         RenderFrame();
     }
+    UpdateHoverPollTimer();
 
     g_lastItemCheckTime = std::chrono::steady_clock::now();
     return true;
@@ -1779,6 +1802,7 @@ void ReloadSettings() {
     ApplyDesktopIconVisibility(g_settings.hideDesktopIcons != 0);
     g_iconCache.clear();
     RebuildFromDesktop(true);
+    UpdateHoverPollTimer();
 }
 
 void RefreshWorkAreaIfNeeded() {
@@ -1802,6 +1826,15 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                         KillTimer(hwnd, kTimerAnimation);
                         g_animationTimerRunning = false;
                         RenderFrame();
+                    }
+                    return 0;
+                case kTimerHoverPoll:
+                    if (!g_animationTimerRunning && g_dockShown) {
+                        POINT screenPoint{};
+                        GetCursorPos(&screenPoint);
+                        if (IsPointerOverDock(screenPoint)) {
+                            EnsureAnimationTimer();
+                        }
                     }
                     return 0;
                 case kTimerMaintenance: {
@@ -2040,6 +2073,8 @@ int RunDockThread() {
     KillTimer(hwnd, kTimerMaintenance);
     KillTimer(hwnd, kTimerRefresh);
     KillTimer(hwnd, kTimerTestQuit);
+    KillTimer(hwnd, kTimerHoverPoll);
+    g_hoverPollRunning = false;
 
     RestoreDesktopIcons();
 
