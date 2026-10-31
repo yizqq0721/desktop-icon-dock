@@ -4,7 +4,7 @@
 // @name:zh-CN      桌面图标 Dock
 // @description     Turns your desktop icons into a centered macOS-style dock with Liquid Glass visuals
 // @description:zh-CN 将桌面图标变成居中的 macOS 风格 Dock，带液态玻璃质感
-// @version         1.0.4
+// @version         1.0.5
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -17,11 +17,12 @@
 # Desktop Icon Dock
 
 Replaces the desktop icon layout with a single centered dock, drawn above the
-wallpaper with a Liquid Glass panel.
+wallpaper. By default only the icons are shown, on a fully transparent
+background.
 
 - macOS-style hover magnification with smooth falloff and neighbor spread.
-- Glass panel rendered with a blurred wallpaper backdrop, specular rim and a
-  subtle iridescent edge.
+- Optional Liquid Glass panel with a blurred wallpaper backdrop, specular rim
+  and a subtle iridescent edge.
 - Single click launches an item, right click opens the normal shell menu.
 - The original desktop icons are hidden (optional) and restored when the mod
   is unloaded.
@@ -73,6 +74,11 @@ icons, or run the mod once more and unload it.
   $name:zh-CN: 底部偏移
   $description: Gap between the dock and the taskbar, in pixels
   $description:zh-CN: Dock 与任务栏之间的间距（像素）
+- TransparentBackground: true
+  $name: Transparent background
+  $name:zh-CN: 透明背景
+  $description: Show only the icons and skip the glass panel
+  $description:zh-CN: 只显示图标，不使用玻璃背景
 - GlassOpacity: 24
   $name: Glass opacity (%)
   $name:zh-CN: 玻璃不透明度（%）
@@ -179,6 +185,7 @@ static int TestSettingDefault(const wchar_t* name) {
     if (!wcscmp(name, L"SpacingFactor")) return 60;
     if (!wcscmp(name, L"Smoothing")) return 16;
     if (!wcscmp(name, L"BottomOffset")) return 10;
+    if (!wcscmp(name, L"TransparentBackground")) return 1;
     if (!wcscmp(name, L"GlassOpacity")) return 24;
     if (!wcscmp(name, L"GlassBlur")) return 20;
     if (!wcscmp(name, L"ShowLabels")) return 1;
@@ -231,6 +238,7 @@ struct Settings {
     int spacingFactor = 60;
     int smoothing = 16;
     int bottomOffset = 10;
+    int transparentBackground = 1;
     int glassOpacity = 24;
     int glassBlur = 20;
     int showLabels = 1;
@@ -453,6 +461,7 @@ void LoadSettings() {
     s.spacingFactor = ClampInt(Wh_GetIntSetting(L"SpacingFactor"), 0, 100);
     s.smoothing = ClampInt(Wh_GetIntSetting(L"Smoothing"), 1, 60);
     s.bottomOffset = ClampInt(Wh_GetIntSetting(L"BottomOffset"), 0, 300);
+    s.transparentBackground = Wh_GetIntSetting(L"TransparentBackground") ? 1 : 0;
     s.glassOpacity = ClampInt(Wh_GetIntSetting(L"GlassOpacity"), 0, 100);
     s.glassBlur = ClampInt(Wh_GetIntSetting(L"GlassBlur"), 0, 80);
     s.showLabels = Wh_GetIntSetting(L"ShowLabels") ? 1 : 0;
@@ -1406,16 +1415,21 @@ void RenderFrame() {
     double width = ClampDouble(g_panelWidth, (double)g_layout.panelBaseWidth,
                                (double)g_layout.panelMaxWidth);
     double x = (g_layout.windowWidth - width) * 0.5;
-    double panelTopNow = CurrentPanelTop();
-    double panelHeightNow = g_layout.panelBottom - panelTopNow;
-    RectF panel((REAL)x, (REAL)panelTopNow, (REAL)width,
-                (REAL)panelHeightNow);
-    float radius = (float)(panelHeightNow * 0.36);
-
-    DrawGlassPanel(graphics, panel, radius);
+    double labelAnchor = 0.0;
+    if (g_settings.transparentBackground) {
+        labelAnchor = g_layout.panelBottom - g_layout.panelHeightMax;
+    } else {
+        double panelTopNow = CurrentPanelTop();
+        double panelHeightNow = g_layout.panelBottom - panelTopNow;
+        RectF panel((REAL)x, (REAL)panelTopNow, (REAL)width,
+                    (REAL)panelHeightNow);
+        float radius = (float)(panelHeightNow * 0.36);
+        DrawGlassPanel(graphics, panel, radius);
+        labelAnchor = panelTopNow;
+    }
     DrawIcons(graphics);
     if (g_settings.showLabels) {
-        DrawItemLabel(graphics, g_hoverIndex, panelTopNow);
+        DrawItemLabel(graphics, g_hoverIndex, labelAnchor);
     }
 
     PresentFrame();
@@ -1448,6 +1462,17 @@ bool UpdateAnimation() {
     InflateRect(&hoverRect, (int)lround(10 * g_dpiScale),
                 (int)lround(10 * g_dpiScale) + g_layout.labelAreaHeight);
     bool pointerOverUs = (under == g_hwnd);
+    if (!pointerOverUs && g_settings.transparentBackground && under) {
+        // Fully transparent pixels are click-through, so accept the desktop
+        // windows underneath as hovering the dock area.
+        wchar_t className[64] = L"";
+        if (GetClassNameW(under, className, ARRAYSIZE(className)) > 0) {
+            pointerOverUs = !_wcsicmp(className, L"Progman") ||
+                            !_wcsicmp(className, L"WorkerW") ||
+                            !_wcsicmp(className, L"SHELLDLL_DefView") ||
+                            !_wcsicmp(className, L"SysListView32");
+        }
+    }
     bool inside = pointerOverUs && PtInRect(&hoverRect, clientPoint) != FALSE;
 
     if (inside) {
