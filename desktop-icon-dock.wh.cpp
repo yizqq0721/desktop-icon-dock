@@ -4,7 +4,7 @@
 // @name:zh-CN      桌面图标 Dock
 // @description     Turns your desktop icons into a centered macOS-style dock with Liquid Glass visuals
 // @description:zh-CN 将桌面图标变成居中的 macOS 风格 Dock，带液态玻璃质感
-// @version         1.0.3
+// @version         1.0.4
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -279,10 +279,11 @@ struct LayoutMetrics {
     int panelPadX = 14;
     int panelPadY = 8;
     int panelHeight = 0;
+    int panelHeightRest = 0;
+    int panelHeightMax = 0;
     int panelTop = 0;
     int panelBottom = 0;
     int iconBottom = 0;
-    int iconBottomPad = 4;
     int panelBaseWidth = 0;
     int panelMaxWidth = 0;
     int windowWidth = 0;
@@ -929,9 +930,12 @@ void ComputeLayout() {
     g_layout.maxScale = std::max(1.0, g_settings.maxScalePercent / 100.0);
     g_layout.spacingFactor = ClampDouble(g_settings.spacingFactor / 100.0, 0.0, 1.0);
     g_layout.panelPadX = std::max(8, (int)lround(g_layout.iconPx * 0.30));
-    g_layout.panelPadY = std::max(6, (int)lround(g_layout.iconPx * 0.15));
+    g_layout.panelPadY = std::max(4, (int)lround(g_layout.iconPx * 0.07));
     int iconArea = (int)ceil(g_layout.iconPx * g_layout.maxScale);
-    g_layout.panelHeight = iconArea + 2 * g_layout.panelPadY;
+    int liftMax = (int)ceil(4.0 * g_dpiScale);
+    g_layout.panelHeightRest = g_layout.iconPx + 2 * g_layout.panelPadY;
+    g_layout.panelHeightMax = iconArea + liftMax + 2 * g_layout.panelPadY;
+    g_layout.panelHeight = g_layout.panelHeightMax;
 
     int baseContent = 0;
     if (count > 0) {
@@ -970,8 +974,7 @@ void ComputeLayout() {
                             g_layout.panelHeight + g_layout.glowMargin;
     g_layout.panelTop = g_layout.glowMargin + g_layout.labelAreaHeight;
     g_layout.panelBottom = g_layout.panelTop + g_layout.panelHeight;
-    g_layout.iconBottomPad = std::max(3, (int)lround(g_layout.iconPx * 0.07));
-    g_layout.iconBottom = g_layout.panelBottom - g_layout.iconBottomPad;
+    g_layout.iconBottom = g_layout.panelBottom - g_layout.panelPadY;
 
     double pitch = g_layout.iconPx + g_layout.spacingPx;
     for (int i = 0; i < count; ++i) {
@@ -999,6 +1002,25 @@ RectF IconRectFor(const DockItem& item) {
     double bottom = g_layout.iconBottom - lift;
     return RectF((REAL)(item.centerX - size * 0.5), (REAL)(bottom - size),
                  (REAL)size, (REAL)size);
+}
+
+double CurrentPanelProgress() {
+    if (g_layout.maxScale <= 1.0) return 0.0;
+    double largest = 1.0;
+    for (const auto& item : g_items) {
+        if (item.scale > largest) largest = item.scale;
+    }
+    return ClampDouble((largest - 1.0) / (g_layout.maxScale - 1.0), 0.0, 1.0);
+}
+
+double CurrentPanelHeight() {
+    return g_layout.panelHeightRest +
+           (g_layout.panelHeightMax - g_layout.panelHeightRest) *
+               CurrentPanelProgress();
+}
+
+double CurrentPanelTop() {
+    return g_layout.panelBottom - CurrentPanelHeight();
 }
 
 void PositionWindow() {
@@ -1228,8 +1250,8 @@ void DrawGlassPanel(Graphics& graphics, const RectF& panel, float radius) {
     }
 
     if (g_intensity > 0.01 && g_mouseXValid) {
-        double glowSize = g_layout.panelHeight * 2.4;
-        double centerY = g_layout.panelBottom - g_layout.panelHeight * 0.45;
+        double glowSize = panel.Height * 2.4;
+        double centerY = (panel.Y + panel.Height) - panel.Height * 0.45;
         RectF glowRect((REAL)(g_lastMouseX - glowSize * 0.5),
                        (REAL)(centerY - glowSize * 0.5), (REAL)glowSize,
                        (REAL)glowSize);
@@ -1242,7 +1264,7 @@ void DrawGlassPanel(Graphics& graphics, const RectF& panel, float radius) {
     DrawPanelRim(graphics, panelPath, panel, radius);
 }
 
-void DrawItemLabel(Graphics& graphics, int index) {
+void DrawItemLabel(Graphics& graphics, int index, double panelTopNow) {
     if (index < 0 || index >= (int)g_items.size()) return;
     const DockItem& item = g_items[index];
     double alpha = item.labelAlpha;
@@ -1283,7 +1305,7 @@ void DrawItemLabel(Graphics& graphics, int index) {
                                  g_layout.windowWidth - pillWidth * 0.5 -
                                      6.0 * g_dpiScale);
     RectF pill((REAL)(centerX - pillWidth * 0.5),
-               (REAL)(g_layout.panelTop - g_layout.labelGap - pillHeight + slide),
+               (REAL)(panelTopNow - g_layout.labelGap - pillHeight + slide),
                (REAL)pillWidth, (REAL)pillHeight);
 
     {
@@ -1384,14 +1406,16 @@ void RenderFrame() {
     double width = ClampDouble(g_panelWidth, (double)g_layout.panelBaseWidth,
                                (double)g_layout.panelMaxWidth);
     double x = (g_layout.windowWidth - width) * 0.5;
-    RectF panel((REAL)x, (REAL)g_layout.panelTop, (REAL)width,
-                (REAL)g_layout.panelHeight);
-    float radius = (float)(g_layout.panelHeight * 0.36);
+    double panelTopNow = CurrentPanelTop();
+    double panelHeightNow = g_layout.panelBottom - panelTopNow;
+    RectF panel((REAL)x, (REAL)panelTopNow, (REAL)width,
+                (REAL)panelHeightNow);
+    float radius = (float)(panelHeightNow * 0.36);
 
     DrawGlassPanel(graphics, panel, radius);
     DrawIcons(graphics);
     if (g_settings.showLabels) {
-        DrawItemLabel(graphics, g_hoverIndex);
+        DrawItemLabel(graphics, g_hoverIndex, panelTopNow);
     }
 
     PresentFrame();
