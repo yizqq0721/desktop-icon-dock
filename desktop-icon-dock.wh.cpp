@@ -4,12 +4,12 @@
 // @name:zh-CN      桌面图标 Dock
 // @description     Turns your desktop icons into a centered macOS-style dock with Liquid Glass visuals
 // @description:zh-CN 将桌面图标变成居中的 macOS 风格 Dock，带液态玻璃质感
-// @version         1.0.0
+// @version         1.0.2
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
 // @architecture    x86-64
-// @compilerOptions -lgdiplus -lole32 -loleaut32 -luuid -lshell32
+// @compilerOptions -lgdiplus -lgdi32 -luser32 -lole32 -loleaut32 -luuid -lshell32
 // ==/WindhawkMod==
 
 // ==WindhawkModReadme==
@@ -1608,6 +1608,7 @@ void ShowItemContextMenu(int index, POINT screenPoint) {
 }
 
 bool RebuildFromDesktop(bool force) {
+    if (g_stopRequested) return false;
     std::vector<EnumeratedItem> found;
     if (!EnumerateDesktopItems(found)) {
         Wh_Log(L"Desktop item enumeration failed");
@@ -1698,15 +1699,9 @@ bool RebuildFromDesktop(bool force) {
 
 void ReloadSettings() {
     LoadSettings();
+    ApplyDesktopIconVisibility(g_settings.hideDesktopIcons != 0);
     g_iconCache.clear();
     RebuildFromDesktop(true);
-    if (!g_settings.hideDesktopIcons) {
-        ApplyDesktopIconVisibility(false);
-        if (g_dockShown) {
-            CaptureBackdrop();
-            RenderFrame();
-        }
-    }
 }
 
 void RefreshWorkAreaIfNeeded() {
@@ -1898,6 +1893,7 @@ void DestroyFrameBuffer() {
 }
 
 int RunDockThread() {
+    if (g_stopRequested) return 0;
     HRESULT coInit = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(coInit)) {
         Wh_Log(L"CoInitializeEx failed: 0x%08X", coInit);
@@ -1944,6 +1940,8 @@ int RunDockThread() {
     LoadSettings();
     g_lastItemCheckTime = std::chrono::steady_clock::now();
     RebuildFromDesktop(true);
+
+    if (g_stopRequested) PostQuitMessage(0);
 
     SetTimer(hwnd, kTimerMaintenance, 1000, nullptr);
 #ifdef DOCK_STANDALONE_TEST
@@ -2007,14 +2005,15 @@ DWORD WINAPI DockThreadProc(LPVOID) {
 }  // namespace
 
 #ifndef DOCK_STANDALONE_TEST
-void Wh_ModInit() {
+BOOL Wh_ModInit() {
     g_instance = GetModuleHandleW(nullptr);
     HANDLE thread = CreateThread(nullptr, 0, DockThreadProc, nullptr, 0, &g_threadId);
-    if (thread) {
-        g_thread = thread;
-    } else {
+    if (!thread) {
         Wh_Log(L"CreateThread failed: %lu", GetLastError());
+        return FALSE;
     }
+    g_thread = thread;
+    return TRUE;
 }
 
 void Wh_ModUninit() {
