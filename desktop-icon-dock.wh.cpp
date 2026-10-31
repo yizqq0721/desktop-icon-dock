@@ -18,6 +18,10 @@
 
 把桌面图标变成居中的 macOS 风格 Dock。默认使用完全透明的背景，只显示图标；也可以开启可选的液态玻璃面板。
 
+![桌面图标 Dock 效果展示](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-preview.jpg)
+
+*实际效果：桌面图标以 macOS Dock 样式居中排列，悬停的图标会放大并显示名称。*
+
 ## 功能特性
 
 - **macOS 风格悬停放大**：鼠标接近时图标平滑放大，按余弦曲线衰减，相邻图标同时向外让位。
