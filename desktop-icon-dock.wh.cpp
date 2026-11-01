@@ -2,8 +2,8 @@
 // @id              desktop-icon-dock
 // @name            Desktop Icon Dock
 // @name:zh-CN      桌面图标 Dock
-// @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; optional glass panel
-// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；可选液态玻璃面板
+// @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; shortcuts are copied into a dock-owned folder so desktop cleanups do not affect the dock; optional glass panel
+// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；快捷方式会复制到 Dock 自己的目录，清理桌面不影响 Dock；可选液态玻璃面板
 // @version         1.1.0
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
@@ -30,17 +30,21 @@ magnified with its label shown.*
 
 - **Drag to add**: drag a shortcut, file or folder from the desktop, File
   Explorer or a `shell:Desktop` window onto the dock. It is inserted at the
-  drop position; items that are already in the dock are ignored.
+  drop position; items that are already in the dock are ignored. `.lnk` and
+  `.url` shortcuts are copied into a dock-owned folder, so deleting the
+  original shortcut from the desktop leaves the dock item intact; files,
+  folders and virtual items are referenced by path.
 - **Drag to reorder**: hold the left mouse button on an icon and drag it
   within the dock. Icons rearrange live and the new order is saved when you
   release the button.
 - **Drag out to put back on the desktop**: drag an item outside the dock and
   release it over the desktop. The icon is placed at the release point. If the
   item already lives on the desktop, its original icon is moved there;
-  otherwise a shortcut pointing to it is created on the desktop and the
-  original file or folder stays where it is. Items that have no filesystem
-  location, such as the Recycle Bin, are only removed from the dock. Removing
-  the last item brings back the empty-state hint.
+  otherwise a shortcut is created on the desktop and the original file or
+  folder stays where it is. Items that have no filesystem location, such as
+  the Recycle Bin, are only removed from the dock. A dock-owned shortcut copy
+  is removed after it has been placed back. Removing the last item brings back
+  the empty-state hint.
 - **Empty state**: a visible drop target is shown when the list is empty, so
   the dock can always receive the first item. The window is never hidden just
   because the list is empty.
@@ -61,8 +65,10 @@ magnified with its label shown.*
   item's native Explorer context menu (open, send to, create shortcut,
   properties, delete, ...).
 - **Independent from the desktop**: adding, removing, renaming or moving
-  desktop icons does not change the dock. The list is stored per user in the
-  registry and survives Explorer restarts.
+  desktop icons does not change the dock. Shortcuts added to the dock are
+  copied into its own folder, so even deleting them from the desktop does not
+  affect the dock; files, folders and virtual items are referenced by path.
+  The list is stored per user in the registry and survives Explorer restarts.
 - **Original desktop icons hidden in memory (optional)**: when enabled, the
   desktop's list view is hidden while the dock is active; no Explorer setting
   or registry value is changed, and the icons are shown again when the mod is
@@ -78,18 +84,22 @@ desktop icons.
 - **Storage**: the ordered list is saved under
   `HKCU\Software\DesktopIconDock`, value `Items` (`REG_MULTI_SZ`). Each entry
   is a desktop-absolute parsing name, such as a full file path or a shell GUID
-  for virtual items. Every add, reorder and removal is written immediately.
+  for virtual items. Shortcut entries point to copies in
+  `%LOCALAPPDATA%\DesktopIconDock\Items`; other entries point to the original
+  path. Every add, reorder and removal is written immediately.
 - **Adding**: external drags are received through an OLE drop target
   (`IDropTarget`), supporting file drops and shell item lists. The insertion
-  position follows the pointer; duplicates are skipped by parsing name.
+  position follows the pointer; `.lnk` and `.url` shortcuts are copied into
+  the dock folder first. Duplicates are skipped by parsing name.
 - **Reordering and removing**: these are handled inside the dock window with
   mouse capture, so they also work in the transparent gaps between icons.
 - **Putting items back on the desktop**: dropping outside the panel places the
   item at the release point. An item whose parent folder is already the user
   or public desktop has its original icon repositioned through the desktop's
   folder view; any other file or folder gets a uniquely named `.lnk` shortcut
-  on the user desktop (a source shortcut is copied, other items get a new
-  shortcut). The original file is never moved or deleted. Positioning follows
+  on the user desktop (a source `.lnk` or `.url` is copied, other items get a
+  new shortcut). The original file is never moved or deleted, and a dock-owned
+  shortcut copy is removed after it has been placed back. Positioning follows
   the system "align icons to grid" setting.
 - **Empty state**: the centered hint pill is drawn with a non-transparent
   background and is registered as part of the same drop target.
@@ -141,9 +151,10 @@ desktop icons.
   list instead of mirroring the desktop. Drag the items you want onto the
   empty-state hint.
 - **An item disappeared**: its stored parsing name could not be resolved (for
-  example, the file was deleted or renamed). The entry is kept in the registry
-  and retried; it reappears if the path is available again. Reorder or remove
-  other items to rewrite the stored list.
+  example, the referenced file or folder was deleted or renamed). Shortcuts
+  are copied into the dock folder and are not affected by deleting the
+  desktop shortcut. The entry is kept in the registry and retried; it
+  reappears if the path is available again.
 - **After dragging an item out, a shortcut appeared on the desktop**: this is
   expected. Items that are not on the desktop are not moved; a shortcut is
   created at the release point instead. The original file or folder is not
@@ -160,12 +171,12 @@ desktop icons.
 
 本模组把快捷方式、文件和文件夹变成一个居中的 macOS 风格 Dock，默认使用全透明背景；关闭“透明背景”后会显示液态玻璃面板。
 
-- 从桌面、资源管理器或 `shell:Desktop` 窗口把项目拖到 Dock 上即可添加，落点决定插入位置，重复项目会被忽略。
-- 按住图标在 Dock 内拖动可实时排序；拖到 Dock 外松手会把项目放回桌面，图标落在松手位置。项目原本就在桌面上时移动原图标；否则在桌面新建指向它的快捷方式，原文件或文件夹保持原位；回收站等虚拟项目仅从 Dock 移除。移除最后一项后显示空状态提示。
-- Dock 是独立列表，不再同步桌面；列表保存在 `HKCU\Software\DesktopIconDock` 的 `Items` 值中，顺序即显示顺序，重启 Explorer 后保持。
+- 从桌面、资源管理器或 `shell:Desktop` 窗口把项目拖到 Dock 上即可添加，落点决定插入位置，重复项目会被忽略。快捷方式（`.lnk` / `.url`）会复制到 Dock 自己的目录，删除桌面上的原快捷方式不影响 Dock；文件和文件夹按路径引用。
+- 按住图标在 Dock 内拖动可实时排序；拖到 Dock 外松手会把项目放回桌面，图标落在松手位置。项目原本就在桌面上时移动原图标；否则在桌面新建指向它的快捷方式，原文件或文件夹保持原位；回收站等虚拟项目仅从 Dock 移除；Dock 副本在放回桌面后删除。移除最后一项后显示空状态提示。
+- Dock 是独立列表，不再同步桌面；列表保存在 `HKCU\Software\DesktopIconDock` 的 `Items` 值中，顺序即显示顺序，重启 Explorer 后保持；快捷方式副本位于 `%LOCALAPPDATA%\DesktopIconDock\Items`。
 - 图标支持悬停放大、相邻图标让位和名称标签；左键打开，右键打开资源管理器原生菜单。
 - “隐藏原始桌面图标”默认关闭；开启后仅在内存中隐藏桌面列表视图，卸载模组后自动恢复。
-- 解析失败的项目会跳过显示但保留在存储中，每 30 秒重试；回收站等虚拟项目的图标会定期刷新。
+- 解析失败的项目会跳过显示但保留在存储中，每 30 秒重试；快捷方式使用副本，不受桌面删除影响；回收站等虚拟项目的图标会定期刷新。
 - 仅支持 x86-64 的 Windows 10/11，且只在主显示器底部显示。
 
 各设置项的说明见上方英文表格。
@@ -279,6 +290,7 @@ namespace {
 constexpr wchar_t kWindowClass[] = L"WindhawkDesktopIconDock";
 constexpr wchar_t kStorageKey[] = L"Software\\DesktopIconDock";
 constexpr wchar_t kStorageItems[] = L"Items";
+constexpr wchar_t kDockItemsFolder[] = L"DesktopIconDock\\Items";
 constexpr UINT kMsgReloadSettings = WM_APP + 1;
 constexpr UINT kMsgQuit = WM_APP + 3;
 constexpr UINT_PTR kTimerAnimation = 1;
@@ -2222,34 +2234,6 @@ void PersistVisibleOrder(int removedStoredIndex) {
     SaveDockKeys(g_storedKeys);
 }
 
-bool AddKeysAt(int insertIndex, const std::vector<std::wstring>& newKeys) {
-    std::vector<std::wstring> stored = g_storedKeys;
-    std::vector<std::wstring> accepted;
-    accepted.reserve(newKeys.size());
-    for (const auto& key : newKeys) {
-        if (key.empty()) continue;
-        if (ContainsKeyNoCase(stored, key)) continue;
-        if (ContainsKeyNoCase(accepted, key)) continue;
-        accepted.push_back(key);
-    }
-    if (accepted.empty()) return false;
-
-    size_t target = stored.size();
-    if (!g_items.empty()) {
-        int index = ClampInt(insertIndex, 0, (int)g_items.size());
-        if (index < (int)g_items.size()) {
-            target = g_items[index].storedIndex;
-        } else {
-            target = g_items.back().storedIndex + 1;
-        }
-        if (target > stored.size()) target = stored.size();
-    }
-    stored.insert(stored.begin() + target, accepted.begin(), accepted.end());
-    g_storedKeys = std::move(stored);
-    SaveDockKeys(g_storedKeys);
-    return RebuildFromList(true);
-}
-
 bool EndsWithNoCase(const std::wstring& value, const wchar_t* suffix) {
     size_t length = wcslen(suffix);
     return value.size() >= length &&
@@ -2274,10 +2258,185 @@ std::wstring GetKnownFolder(REFKNOWNFOLDERID folderId) {
     return path;
 }
 
+// Shortcuts are copied into a dock-owned folder, so deleting the original
+// shortcut from the desktop does not remove the dock item.
+const std::wstring& GetDockItemsFolder() {
+    static const std::wstring folder = [] {
+        std::wstring localAppData = GetKnownFolder(FOLDERID_LocalAppData);
+        if (localAppData.empty()) return std::wstring();
+        std::wstring path = localAppData + L"\\" + kDockItemsFolder;
+        int result = SHCreateDirectoryExW(nullptr, path.c_str(), nullptr);
+        if (result != ERROR_SUCCESS && result != ERROR_ALREADY_EXISTS) {
+            Wh_Log(L"Creating dock items folder failed: %d", result);
+            return std::wstring();
+        }
+        return path;
+    }();
+    return folder;
+}
+
+bool IsUnderDockItemsFolder(const std::wstring& path) {
+    const std::wstring& folder = GetDockItemsFolder();
+    if (folder.empty() || path.size() <= folder.size()) return false;
+    if (_wcsnicmp(path.c_str(), folder.c_str(), folder.size()) != 0) return false;
+    return path[folder.size()] == L'\\';
+}
+
+uint64_t HashShortcutSource(const std::wstring& path) {
+    uint64_t hash = 1469598103934665603ULL;
+    for (wchar_t ch : path) {
+        hash ^= (uint16_t)towlower(ch);
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+std::wstring BuildShortcutCopyPath(const std::wstring& sourcePath) {
+    const std::wstring& folder = GetDockItemsFolder();
+    if (folder.empty()) return L"";
+    size_t slash = sourcePath.find_last_of(L"\\/");
+    if (slash == std::wstring::npos || slash + 1 >= sourcePath.size()) {
+        return L"";
+    }
+    std::wstring fileName = sourcePath.substr(slash + 1);
+
+    uint64_t hash = HashShortcutSource(sourcePath);
+    wchar_t hashText[17];
+    for (int i = 15; i >= 0; --i) {
+        uint64_t digit = hash & 0xF;
+        hashText[i] =
+            (wchar_t)(digit < 10 ? L'0' + digit : L'A' + (digit - 10));
+        hash >>= 4;
+    }
+    hashText[16] = L'\0';
+
+    std::wstring itemFolder = folder + L"\\" + hashText;
+    int result = SHCreateDirectoryExW(nullptr, itemFolder.c_str(), nullptr);
+    if (result != ERROR_SUCCESS && result != ERROR_ALREADY_EXISTS) {
+        Wh_Log(L"Creating dock copy folder failed: %d", result);
+        return L"";
+    }
+    return itemFolder + L"\\" + fileName;
+}
+
+// Returns the dock-owned copy path when the source should be copied, or an
+// empty string when it has to stay a plain reference (virtual items, folders,
+// regular files and files that already live in the dock folder).
+std::wstring ShortcutCopyTarget(const std::wstring& sourcePath) {
+    if (!EndsWithNoCase(sourcePath, L".lnk") &&
+        !EndsWithNoCase(sourcePath, L".url")) {
+        return L"";
+    }
+    if (IsUnderDockItemsFolder(sourcePath)) return L"";
+    DWORD attributes = GetFileAttributesW(sourcePath.c_str());
+    if (attributes == INVALID_FILE_ATTRIBUTES ||
+        (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        return L"";
+    }
+    return BuildShortcutCopyPath(sourcePath);
+}
+
+bool EnsureShortcutCopy(const std::wstring& sourcePath,
+                        const std::wstring& targetPath) {
+    if (CopyFileW(sourcePath.c_str(), targetPath.c_str(), FALSE)) return true;
+    Wh_Log(L"Copying shortcut failed: %ls -> %ls (%lu)", sourcePath.c_str(),
+           targetPath.c_str(), GetLastError());
+    return false;
+}
+
+void RemoveShortcutCopy(const std::wstring& copyPath) {
+    if (!IsUnderDockItemsFolder(copyPath)) return;
+    if (!DeleteFileW(copyPath.c_str())) {
+        Wh_Log(L"Removing dock copy failed: %ls (%lu)", copyPath.c_str(),
+               GetLastError());
+        return;
+    }
+    std::wstring itemFolder = GetParentPath(copyPath);
+    const std::wstring& folder = GetDockItemsFolder();
+    if (!itemFolder.empty() &&
+        _wcsicmp(itemFolder.c_str(), folder.c_str()) != 0) {
+        RemoveDirectoryW(itemFolder.c_str());
+    }
+}
+
+// Converts existing shortcut references to dock-owned copies. Unresolvable
+// entries and non-shortcut references are left untouched.
+void MigrateShortcutReferencesToCopies() {
+    std::vector<std::wstring> migrated;
+    migrated.reserve(g_storedKeys.size());
+    bool changed = false;
+    for (const auto& key : g_storedKeys) {
+        std::wstring target = ShortcutCopyTarget(key);
+        if (!target.empty() && EnsureShortcutCopy(key, target)) {
+            migrated.push_back(target);
+            changed = true;
+        } else {
+            migrated.push_back(key);
+        }
+    }
+    if (changed) {
+        g_storedKeys = std::move(migrated);
+        SaveDockKeys(g_storedKeys);
+        Wh_Log(L"Migrated shortcut references to dock copies");
+    }
+}
+
+bool AddKeysAt(int insertIndex, const std::vector<std::wstring>& newKeys) {
+    std::vector<std::wstring> stored = g_storedKeys;
+    std::vector<std::wstring> accepted;
+    bool restored = false;
+    accepted.reserve(newKeys.size());
+    for (const auto& sourceKey : newKeys) {
+        if (sourceKey.empty()) continue;
+        std::wstring copyPath = ShortcutCopyTarget(sourceKey);
+        std::wstring key = copyPath.empty() ? sourceKey : copyPath;
+        bool duplicate = ContainsKeyNoCase(stored, key) ||
+                         ContainsKeyNoCase(accepted, key);
+        if (copyPath.empty()) {
+            if (!duplicate) accepted.push_back(std::move(key));
+            continue;
+        }
+        if (duplicate) {
+            if (GetFileAttributesW(copyPath.c_str()) !=
+                INVALID_FILE_ATTRIBUTES) {
+                continue;
+            }
+            // The stored item lost its copy; recreate it so the add works
+            // again even though the entry is already in the list.
+            if (EnsureShortcutCopy(sourceKey, copyPath)) restored = true;
+            continue;
+        }
+        if (!EnsureShortcutCopy(sourceKey, copyPath)) continue;
+        accepted.push_back(std::move(key));
+    }
+    if (accepted.empty()) {
+        return restored ? RebuildFromList(true) : false;
+    }
+
+    size_t target = stored.size();
+    if (!g_items.empty()) {
+        int index = ClampInt(insertIndex, 0, (int)g_items.size());
+        if (index < (int)g_items.size()) {
+            target = g_items[index].storedIndex;
+        } else {
+            target = g_items.back().storedIndex + 1;
+        }
+        if (target > stored.size()) target = stored.size();
+    }
+    stored.insert(stored.begin() + target, accepted.begin(), accepted.end());
+    g_storedKeys = std::move(stored);
+    SaveDockKeys(g_storedKeys);
+    return RebuildFromList(true);
+}
+
 std::wstring MakeUniqueShortcutPath(const std::wstring& desktopPath,
-                                    const std::wstring& displayName) {
+                                    const std::wstring& displayName,
+                                    const wchar_t* extension) {
     std::wstring stem = displayName;
-    if (EndsWithNoCase(stem, L".lnk")) stem.resize(stem.size() - 4);
+    size_t extensionLength = wcslen(extension);
+    if (EndsWithNoCase(stem, extension)) {
+        stem.resize(stem.size() - extensionLength);
+    }
     for (auto& c : stem) {
         if (c < 32 || wcschr(L"\\/:*?\"<>|", c)) c = L'_';
     }
@@ -2286,15 +2445,15 @@ std::wstring MakeUniqueShortcutPath(const std::wstring& desktopPath,
     }
     if (stem.empty()) stem = L"Shortcut";
 
-    std::wstring candidate = desktopPath + L"\\" + stem + L".lnk";
+    std::wstring candidate = desktopPath + L"\\" + stem + extension;
     for (int i = 2; i < 1000; ++i) {
         if (GetFileAttributesW(candidate.c_str()) == INVALID_FILE_ATTRIBUTES) {
             return candidate;
         }
         candidate = desktopPath + L"\\" + stem + L" (" + std::to_wstring(i) +
-                    L").lnk";
+                    L")" + extension;
     }
-    return desktopPath + L"\\" + stem + L".lnk";
+    return desktopPath + L"\\" + stem + extension;
 }
 
 bool PositionDesktopItemAt(const std::wstring& itemPath, POINT screenPoint) {
@@ -2332,8 +2491,13 @@ bool CreateDesktopShortcut(const std::wstring& sourcePath,
                            const std::wstring& displayName,
                            const std::wstring& desktopPath,
                            std::wstring& outPath) {
-    std::wstring destination = MakeUniqueShortcutPath(desktopPath, displayName);
-    if (EndsWithNoCase(sourcePath, L".lnk")) {
+    bool sourceIsShortcutFile = EndsWithNoCase(sourcePath, L".lnk") ||
+                                EndsWithNoCase(sourcePath, L".url");
+    const wchar_t* extension =
+        EndsWithNoCase(sourcePath, L".url") ? L".url" : L".lnk";
+    std::wstring destination =
+        MakeUniqueShortcutPath(desktopPath, displayName, extension);
+    if (sourceIsShortcutFile) {
         if (!CopyFileW(sourcePath.c_str(), destination.c_str(), TRUE)) {
             Wh_Log(L"Copying shortcut failed: %ls (%lu)", sourcePath.c_str(),
                    GetLastError());
@@ -2413,6 +2577,7 @@ void FinishInternalDrag(bool removeItem, POINT screenPoint) {
             return;
         }
         removedStoredIndex = (int)g_items[g_dragIndex].storedIndex;
+        RemoveShortcutCopy(g_items[g_dragIndex].filePath);
         g_items.erase(g_items.begin() + g_dragIndex);
     }
     PersistVisibleOrder(removedStoredIndex);
@@ -2960,6 +3125,7 @@ int RunDockThread() {
 
     LoadSettings();
     g_storedKeys = LoadDockKeys();
+    MigrateShortcutReferencesToCopies();
     g_lastItemCheckTime = std::chrono::steady_clock::now();
     if (auto* dropTarget = new (std::nothrow) DockDropTarget()) {
         if (RegisterDragDrop(hwnd, dropTarget) == S_OK) {
