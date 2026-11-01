@@ -2452,7 +2452,8 @@ class DockDropTarget final : public IDropTarget {
     HRESULT STDMETHODCALLTYPE DragEnter(IDataObject* data, DWORD, POINTL pt,
                                         DWORD* effect) override {
         if (!effect) return E_POINTER;
-        if (!CanAcceptData(data)) {
+        DWORD chosen = EffectFromAllowed(*effect);
+        if (!CanAcceptData(data) || chosen == DROPEFFECT_NONE) {
             *effect = DROPEFFECT_NONE;
             return S_OK;
         }
@@ -2463,13 +2464,14 @@ class DockDropTarget final : public IDropTarget {
             DropIndexAtScreenPoint(POINT{(LONG)pt.x, (LONG)pt.y});
         EnsureAnimationTimer();
         RenderFrame();
-        *effect = DROPEFFECT_COPY;
+        *effect = chosen;
         return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE DragOver(DWORD, POINTL pt, DWORD* effect) override {
         if (!effect) return E_POINTER;
-        if (!g_externalDragActive) {
+        DWORD chosen = EffectFromAllowed(*effect);
+        if (!g_externalDragActive || chosen == DROPEFFECT_NONE) {
             *effect = DROPEFFECT_NONE;
             return S_OK;
         }
@@ -2478,7 +2480,7 @@ class DockDropTarget final : public IDropTarget {
             g_dropInsertIndex = index;
             RenderFrame();
         }
-        *effect = DROPEFFECT_COPY;
+        *effect = chosen;
         return S_OK;
     }
 
@@ -2490,17 +2492,25 @@ class DockDropTarget final : public IDropTarget {
     HRESULT STDMETHODCALLTYPE Drop(IDataObject* data, DWORD, POINTL,
                                    DWORD* effect) override {
         if (!effect) return E_POINTER;
+        DWORD chosen = EffectFromAllowed(*effect);
         int index = g_dropInsertIndex;
         std::vector<std::wstring> keys;
         ExtractKeys(data, keys);
         ClearExternalDrag();
-        bool added = !keys.empty() && AddKeysAt(index, keys);
-        *effect = added ? DROPEFFECT_COPY : DROPEFFECT_NONE;
+        bool added = chosen != DROPEFFECT_NONE && !keys.empty() &&
+                     AddKeysAt(index, keys);
+        *effect = added ? chosen : DROPEFFECT_NONE;
         return S_OK;
     }
 
   private:
     ~DockDropTarget() = default;
+
+    static DWORD EffectFromAllowed(DWORD allowed) {
+        if (allowed & DROPEFFECT_COPY) return DROPEFFECT_COPY;
+        if (allowed & DROPEFFECT_LINK) return DROPEFFECT_LINK;
+        return DROPEFFECT_NONE;
+    }
 
     static UINT ShellIdListFormat() {
         static UINT format = RegisterClipboardFormatW(L"Shell IDList Array");
