@@ -292,8 +292,8 @@ not a launcher that stays on top of other windows.
 - ShowLabels: true
   $name: Show labels
   $name:zh-CN: 显示名称
-  $description: Show the name of the hovered item in a floating glass pill
-  $description:zh-CN: 悬停时在浮动玻璃标签中显示名称
+  $description: Show the name of the hovered item in a floating name pill
+  $description:zh-CN: 悬停时在浮动名称胶囊中显示名称
 - HideDesktopIcons: false
   $name: Hide original desktop icons
   $name:zh-CN: 隐藏原始桌面图标
