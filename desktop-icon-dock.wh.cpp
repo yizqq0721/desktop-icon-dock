@@ -1,10 +1,8 @@
 // ==WindhawkMod==
 // @id              desktop-icon-dock
 // @name            Desktop Icon Dock
-// @name:zh-CN      桌面图标 Dock
 // @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; shortcuts are copied into a dock-owned folder so desktop cleanups do not affect the dock; six background styles from clear to Liquid Glass
-// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；快捷方式会复制到 Dock 自己的目录，清理桌面不影响 Dock；提供从透明到液态玻璃的六种背景风格
-// @version         2.1.0
+// @version         2.1.2
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -19,8 +17,8 @@
 Turns shortcuts, files and folders that you drag onto it into a centered
 macOS-style dock. The dock is an independent list, not a mirror of the
 desktop. A fully transparent background is used by default, showing only the
-icons; five panel materials are available, from a thin clear shell through
-Frosted, Acrylic and Mica to a rebuilt Liquid Glass.
+icons; choose one of five panel materials for a visible background: Clear,
+Frosted, Acrylic, Mica, or Liquid Glass.
 
 ![Desktop Icon Dock preview](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-preview-transparent.jpg)
 
@@ -63,9 +61,9 @@ magnified with its label shown.*
   the screen above the dock and works with Wallpaper Engine and other animated
   wallpapers. "Panel tone" can force a light or dark material, or follow the
   wallpaper automatically.
-- **Name labels**: hovering an icon shows a name pill above it; in transparent
-  mode the pill stays at a fixed position instead of jumping while icons
-  scale.
+- **Name labels**: hovering an icon shows a name pill above it, using the
+  active panel tone; in transparent mode the pill stays at a fixed position
+  instead of jumping while icons scale.
 - **Native interaction**: left click opens an item; right click opens that
   item's native Explorer context menu (open, send to, create shortcut,
   properties, delete, ...).
@@ -81,6 +79,25 @@ magnified with its label shown.*
   unloaded. Off by default, so the desktop remains available as a drag source.
 - **Icon cache with cleanup**: icons are cached per item path and reused;
   virtual items such as the Recycle Bin refresh their icons periodically.
+
+## Background styles
+
+- **Transparent** (default): only the icons and their shadows are drawn, so
+  the dock blends into the wallpaper. Transparent areas remain click-through.
+- **Clear**: a thin translucent tint with a light rim and no blur, like a clear
+  shell. It is the lightest visible panel.
+- **Frosted**: a balanced blur, a soft milky tint, and fine noise. It is the
+  safest general-purpose glass material.
+- **Acrylic**: stronger blur, higher saturation, a thicker tint, and more
+  visible grain, similar to a Windows flyout.
+- **Mica**: a wallpaper-tinted, low-saturation, nearly opaque panel. It is
+  quiet, power-friendly, and suited to an always-visible dock.
+- **Liquid Glass**: a milky blur with a specular rim, an iridescent inner
+  line, pointer-following highlights, and a subtle edge refraction. Its tone
+  adapts to the wallpaper automatically.
+
+Each style also follows the **Panel tone** setting: Light, Dark, or Auto. The
+transparent style ignores the tone.
 
 ## How it works
 
@@ -158,8 +175,9 @@ not a launcher that stays on top of other windows.
 - **Desktop integration**: hiding the system desktop icons in memory and
   opening the native Explorer context menu both work with the shell's desktop
   view from the mod's own process, without injecting into the running shell.
-- **Screen-sampled glass**: the backdrop and the name pills sample the screen
-  area behind the dock, which requires a desktop-level window.
+- **Screen-sampled panel**: the panel backdrop is sampled from the screen
+  above the dock, which requires a desktop-level window. Name pills use the
+  active panel tone instead of a second glass surface.
 
 ## Compatibility and limitations
 
@@ -198,21 +216,6 @@ not a launcher that stays on top of other windows.
   deletes the mod's storage, including the list and the shortcut copies, when
   the mod is removed.
 
-## 中文说明
-
-本模组把快捷方式、文件和文件夹变成一个居中的 macOS 风格 Dock，默认使用全透明背景；也可以选择透壳、毛玻璃、亚克力、云母或液态玻璃面板，并用“面板色调”强制浅色/深色或自动跟随壁纸。
-
-- 从桌面、资源管理器或 `shell:Desktop` 窗口把项目拖到 Dock 上即可添加，落点决定插入位置，重复项目会被忽略。快捷方式（`.lnk` / `.url`）会复制到 Dock 自己的目录，删除桌面上的原快捷方式不影响 Dock；文件和文件夹按路径引用。
-- 按住图标在 Dock 内拖动可实时排序；拖到 Dock 外、在桌面上松手会把项目放回桌面，图标落在松手位置。项目原本就在桌面上时移动原图标；否则在桌面新建指向它的快捷方式，原文件或文件夹保持原位；对于复制进来的快捷方式会优先使用原快捷方式，不会产生多余的 `(2)` 副本；在其他窗口上松手则项目留在 Dock。回收站等虚拟项目仅从 Dock 移除；Dock 副本在放回桌面后删除。移除最后一项后显示空状态提示。
-- Dock 是独立列表，不同步桌面；列表保存在 Windhawk 模组存储的 `items.tsv` 中，并按当前用户 SID 分目录，顺序即显示顺序，重启 Explorer 后保持；快捷方式副本位于同一目录的 `Items` 子目录。卸载模组时 Windhawk 会删除整个存储目录。
-- 图标支持悬停放大、相邻图标让位和名称标签；左键打开，右键打开资源管理器原生菜单。
-- “隐藏原始桌面图标”默认关闭；开启后仅在内存中隐藏桌面列表视图，卸载模组后自动恢复。
-- 背景有 6 种风格：透明、透壳、毛玻璃、亚克力、云母、液态玻璃；每种风格有独立的模糊、色调、饱和度、噪点、边缘高光和镜面高光参数，“面板色调”可选浅色/深色/自动。
-- 解析失败的项目会跳过显示但保留在存储中，每 30 秒只重试此前失败的项目；回收站等虚拟项目的图标会定期刷新。
-- 与 Quick Launch Dock 等启动器 Dock 的区别：本模组位于桌面层级（所有普通窗口之下）、不抢焦点，支持把项目拖回桌面并复用原快捷方式，还提供隐藏系统桌面图标和屏幕采样玻璃背景；这些行为通过 Shell 桌面视图完成，模组本身运行在独立的 explorer.exe tool-mod 进程中，与正在运行的 Shell 进程分离（Windhawk 主程序为 32 位，无法承载本 x86-64 模组）。
-- 仅支持 x86-64 的 Windows 10/11，且只在主显示器底部显示。
-
-各设置项的说明见上方英文表格。
 */
 // ==/WindhawkModReadme==
 
@@ -220,44 +223,28 @@ not a launcher that stays on top of other windows.
 /*
 - IconSize: 48
   $name: Icon size
-  $name:zh-CN: 图标大小
   $description: Base icon size in pixels (at 100% DPI scaling)
-  $description:zh-CN: 图标的基础像素大小（100% DPI 缩放时）
 - Spacing: 10
   $name: Icon spacing
-  $name:zh-CN: 图标间距
   $description: Gap between icons at rest, in pixels
-  $description:zh-CN: 静止状态下图标之间的像素间距
 - MaxScale: 175
   $name: Maximum scale (%)
-  $name:zh-CN: 最大放大比例（%）
   $description: How large the hovered icon grows (175 = 1.75x)
-  $description:zh-CN: 鼠标悬停时图标的最大放大倍数（175 = 1.75 倍）
 - EffectRadius: 160
   $name: Effect radius
-  $name:zh-CN: 效果半径
   $description: Distance from the cursor where magnification fades out, in pixels
-  $description:zh-CN: 放大效果从光标向外衰减的距离（像素）
 - SpacingFactor: 60
   $name: Neighbor spread (%)
-  $name:zh-CN: 相邻扩散（%）
   $description: How much neighboring icons move aside while magnifying
-  $description:zh-CN: 放大时相邻图标向外让位的程度
 - Smoothing: 16
   $name: Smoothing speed
-  $name:zh-CN: 平滑速度
   $description: Higher is snappier, lower is softer
-  $description:zh-CN: 数值越大越跟手，越小越柔和
 - BottomOffset: 10
   $name: Bottom offset
-  $name:zh-CN: 底部偏移
   $description: Gap between the dock and the taskbar, in pixels
-  $description:zh-CN: Dock 与任务栏之间的间距（像素）
 - BackgroundStyle: transparent
   $name: Background style
-  $name:zh-CN: 背景风格
   $description: Panel material used when the dock has a background. "Transparent" draws only the icons.
-  $description:zh-CN: Dock 有背景时使用的面板材质；“透明”只绘制图标。
   $options:
   - transparent: Transparent (icons only)
   - clear: Clear shell
@@ -265,41 +252,22 @@ not a launcher that stays on top of other windows.
   - acrylic: Acrylic
   - mica: Mica
   - liquid: Liquid Glass
-  $options:zh-CN:
-  - transparent: 透明（仅图标）
-  - clear: 透壳
-  - frosted: 毛玻璃
-  - acrylic: 亚克力
-  - mica: 云母
-  - liquid: 液态玻璃
 - Tone: auto
   $name: Panel tone
-  $name:zh-CN: 面板色调
   $description: Light, dark, or automatic based on the wallpaper behind the dock. Ignored by the transparent style.
-  $description:zh-CN: 浅色、深色或根据 Dock 后方壁纸自动选择；透明风格忽略此项。
   $options:
   - auto: Auto (follow wallpaper)
   - light: Light
   - dark: Dark
-  $options:zh-CN:
-  - auto: 自动（跟随壁纸）
-  - light: 浅色
-  - dark: 深色
 - ShowLabels: true
   $name: Show labels
-  $name:zh-CN: 显示名称
   $description: Show the name of the hovered item in a floating name pill
-  $description:zh-CN: 悬停时在浮动名称胶囊中显示名称
 - HideDesktopIcons: false
   $name: Hide original desktop icons
-  $name:zh-CN: 隐藏原始桌面图标
   $description: Hide the original desktop icons while the dock is active by hiding the desktop list view in memory; restored on unload. Off by default so the desktop stays available as a drag source
-  $description:zh-CN: 启用 Dock 时在内存中隐藏桌面列表视图，不修改系统设置；卸载时恢复。默认关闭，便于随时从桌面拖入项目
 - BackdropRefreshSeconds: 20
   $name: Backdrop refresh interval (s)
-  $name:zh-CN: 背景刷新间隔（秒）
   $description: How often the blurred backdrop used by the panel is re-sampled; 0 disables refresh
-  $description:zh-CN: 多久重新采样一次面板所使用的模糊背景；0 表示不自动刷新
 */
 // ==/WindhawkModSettings==
 
