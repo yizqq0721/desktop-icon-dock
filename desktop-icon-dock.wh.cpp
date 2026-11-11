@@ -2,9 +2,9 @@
 // @id              desktop-icon-dock
 // @name            Desktop Icon Dock
 // @name:zh-CN      桌面图标 Dock
-// @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; shortcuts are copied into a dock-owned folder so desktop cleanups do not affect the dock; eight background styles from clear to Liquid Glass
-// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；快捷方式会复制到 Dock 自己的目录，清理桌面不影响 Dock；提供从透明到液态玻璃的八种背景风格
-// @version         2.0.0
+// @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; shortcuts are copied into a dock-owned folder so desktop cleanups do not affect the dock; six background styles from clear to Liquid Glass
+// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；快捷方式会复制到 Dock 自己的目录，清理桌面不影响 Dock；提供从透明到液态玻璃的六种背景风格
+// @version         2.1.0
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -19,8 +19,8 @@
 Turns shortcuts, files and folders that you drag onto it into a centered
 macOS-style dock. The dock is an independent list, not a mirror of the
 desktop. A fully transparent background is used by default, showing only the
-icons; seven panel materials are available, from a thin clear shell through
-Frosted, Acrylic, Mica and Aero to a rebuilt Liquid Glass and a dark HUD.
+icons; five panel materials are available, from a thin clear shell through
+Frosted, Acrylic and Mica to a rebuilt Liquid Glass.
 
 ![Desktop Icon Dock preview](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-preview-transparent.jpg)
 
@@ -57,12 +57,12 @@ magnified with its label shown.*
   are drawn, so the dock blends into the wallpaper; transparent areas of the
   dock window are click-through, so desktop right-click and clicks keep
   working.
-- **Eight background styles**: Transparent, Clear, Frosted, Acrylic, Mica,
-  Aero, Liquid Glass and Dark HUD. Each style is a tuned material preset with
-  its own blur, tint, saturation, noise, rim and highlight treatment; the
-  backdrop is sampled from the screen above the dock and works with Wallpaper
-  Engine and other animated wallpapers. "Panel tone" can force a light or dark
-  material, or follow the wallpaper automatically.
+- **Six background styles**: Transparent, Clear, Frosted, Acrylic, Mica and
+  Liquid Glass. Each style is a tuned material preset with its own blur, tint,
+  saturation, noise, rim and highlight treatment; the backdrop is sampled from
+  the screen above the dock and works with Wallpaper Engine and other animated
+  wallpapers. "Panel tone" can force a light or dark material, or follow the
+  wallpaper automatically.
 - **Name labels**: hovering an icon shows a name pill above it; in transparent
   mode the pill stays at a fixed position instead of jumping while icons
   scale.
@@ -136,7 +136,7 @@ desktop icons.
 | Neighbor spread (%) | 60 | How much neighboring icons move aside while magnifying |
 | Smoothing speed | 16 | Higher is snappier, lower is softer |
 | Bottom offset | 10 | Gap between the dock and the taskbar, in pixels at 100% DPI |
-| Background style | Transparent | Transparent, Clear, Frosted, Acrylic, Mica, Aero, Liquid Glass or Dark HUD |
+| Background style | Transparent | Transparent, Clear, Frosted, Acrylic, Mica or Liquid Glass |
 | Panel tone | Auto | Light, Dark or Auto (follow the wallpaper) for panel styles |
 | Show labels | On | Show a name pill for the hovered item |
 | Hide original desktop icons | Off | Hide the system desktop icons while the dock is active by hiding the desktop list view in memory; they are shown again when the mod is unloaded |
@@ -200,14 +200,14 @@ not a launcher that stays on top of other windows.
 
 ## 中文说明
 
-本模组把快捷方式、文件和文件夹变成一个居中的 macOS 风格 Dock，默认使用全透明背景；也可以选择透壳、毛玻璃、亚克力、云母、Aero、液态玻璃或暗玻璃面板，并用“面板色调”强制浅色/深色或自动跟随壁纸。
+本模组把快捷方式、文件和文件夹变成一个居中的 macOS 风格 Dock，默认使用全透明背景；也可以选择透壳、毛玻璃、亚克力、云母或液态玻璃面板，并用“面板色调”强制浅色/深色或自动跟随壁纸。
 
 - 从桌面、资源管理器或 `shell:Desktop` 窗口把项目拖到 Dock 上即可添加，落点决定插入位置，重复项目会被忽略。快捷方式（`.lnk` / `.url`）会复制到 Dock 自己的目录，删除桌面上的原快捷方式不影响 Dock；文件和文件夹按路径引用。
 - 按住图标在 Dock 内拖动可实时排序；拖到 Dock 外、在桌面上松手会把项目放回桌面，图标落在松手位置。项目原本就在桌面上时移动原图标；否则在桌面新建指向它的快捷方式，原文件或文件夹保持原位；对于复制进来的快捷方式会优先使用原快捷方式，不会产生多余的 `(2)` 副本；在其他窗口上松手则项目留在 Dock。回收站等虚拟项目仅从 Dock 移除；Dock 副本在放回桌面后删除。移除最后一项后显示空状态提示。
 - Dock 是独立列表，不同步桌面；列表保存在 Windhawk 模组存储的 `items.tsv` 中，并按当前用户 SID 分目录，顺序即显示顺序，重启 Explorer 后保持；快捷方式副本位于同一目录的 `Items` 子目录。卸载模组时 Windhawk 会删除整个存储目录。
 - 图标支持悬停放大、相邻图标让位和名称标签；左键打开，右键打开资源管理器原生菜单。
 - “隐藏原始桌面图标”默认关闭；开启后仅在内存中隐藏桌面列表视图，卸载模组后自动恢复。
-- 背景有 8 种风格：透明、透壳、毛玻璃、亚克力、云母、Aero、液态玻璃、暗玻璃；每种风格有独立的模糊、色调、饱和度、噪点、边缘高光和镜面高光参数，“面板色调”可选浅色/深色/自动。
+- 背景有 6 种风格：透明、透壳、毛玻璃、亚克力、云母、液态玻璃；每种风格有独立的模糊、色调、饱和度、噪点、边缘高光和镜面高光参数，“面板色调”可选浅色/深色/自动。
 - 解析失败的项目会跳过显示但保留在存储中，每 30 秒只重试此前失败的项目；回收站等虚拟项目的图标会定期刷新。
 - 与 Quick Launch Dock 等启动器 Dock 的区别：本模组位于桌面层级（所有普通窗口之下）、不抢焦点，支持把项目拖回桌面并复用原快捷方式，还提供隐藏系统桌面图标和屏幕采样玻璃背景；这些行为通过 Shell 桌面视图完成，模组本身运行在独立的 explorer.exe tool-mod 进程中，与正在运行的 Shell 进程分离（Windhawk 主程序为 32 位，无法承载本 x86-64 模组）。
 - 仅支持 x86-64 的 Windows 10/11，且只在主显示器底部显示。
@@ -264,23 +264,19 @@ not a launcher that stays on top of other windows.
   - frosted: Frosted glass
   - acrylic: Acrylic
   - mica: Mica
-  - aero: Aero glass
   - liquid: Liquid Glass
-  - dark: Dark HUD
   $options:zh-CN:
   - transparent: 透明（仅图标）
   - clear: 透壳
   - frosted: 毛玻璃
   - acrylic: 亚克力
   - mica: 云母
-  - aero: Aero 玻璃
   - liquid: 液态玻璃
-  - dark: 暗玻璃
 - Tone: auto
   $name: Panel tone
   $name:zh-CN: 面板色调
-  $description: Light, dark, or automatic based on the wallpaper behind the dock. Ignored by the transparent style; Dark HUD is always dark.
-  $description:zh-CN: 浅色、深色或根据 Dock 后方壁纸自动选择；透明风格忽略此项，暗玻璃始终保持深色。
+  $description: Light, dark, or automatic based on the wallpaper behind the dock. Ignored by the transparent style.
+  $description:zh-CN: 浅色、深色或根据 Dock 后方壁纸自动选择；透明风格忽略此项。
   $options:
   - auto: Auto (follow wallpaper)
   - light: Light
@@ -366,9 +362,7 @@ enum class PanelStyle {
     Frosted,
     Acrylic,
     Mica,
-    Aero,
     Liquid,
-    Dark,
 };
 
 enum class PanelTone {
@@ -617,9 +611,7 @@ PanelStyle ParsePanelStyle(const std::wstring& value) {
     if (value == L"frosted") return PanelStyle::Frosted;
     if (value == L"acrylic") return PanelStyle::Acrylic;
     if (value == L"mica") return PanelStyle::Mica;
-    if (value == L"aero") return PanelStyle::Aero;
     if (value == L"liquid") return PanelStyle::Liquid;
-    if (value == L"dark") return PanelStyle::Dark;
     return PanelStyle::Transparent;
 }
 
@@ -637,12 +629,8 @@ int StyleBlurPx(PanelStyle style) {
             return 22;
         case PanelStyle::Mica:
             return 30;
-        case PanelStyle::Aero:
-            return 16;
         case PanelStyle::Liquid:
             return 18;
-        case PanelStyle::Dark:
-            return 24;
         default:
             return 0;
     }
@@ -656,12 +644,8 @@ double StyleSaturation(PanelStyle style) {
             return 1.80;
         case PanelStyle::Mica:
             return 0.88;
-        case PanelStyle::Aero:
-            return 1.60;
         case PanelStyle::Liquid:
             return 1.40;
-        case PanelStyle::Dark:
-            return 1.05;
         default:
             return 1.0;
     }
@@ -673,8 +657,6 @@ double StyleContrast(PanelStyle style) {
             return 1.04;
         case PanelStyle::Mica:
             return 0.98;
-        case PanelStyle::Aero:
-            return 1.02;
         case PanelStyle::Liquid:
             return 1.01;
         default:
@@ -687,7 +669,6 @@ bool IsTransparentStyle() {
 }
 
 bool ResolveLightPanel() {
-    if (g_settings.backgroundStyle == PanelStyle::Dark) return false;
     if (g_settings.backgroundStyle == PanelStyle::Transparent) return true;
     if (g_settings.tone == PanelTone::Light) return true;
     if (g_settings.tone == PanelTone::Dark) return false;
@@ -714,14 +695,10 @@ struct PanelPalette {
     BYTE noiseAlpha = 0;
     BYTE shadowAlpha = 0;
     float shadowSpread = 1.0f;
-    BYTE innerShadowAlpha = 0;
     BYTE specularAlpha = 0;
     BYTE glossLineAlpha = 0;
-    BYTE outerGlowAlpha = 0;
-    bool aeroGloss = false;
     bool drawBackdrop = true;
     bool useRefraction = false;
-    bool useOuterGlow = false;
 };
 
 PanelPalette BuildPanelPalette() {
@@ -802,29 +779,6 @@ PanelPalette BuildPanelPalette() {
             p.shadowSpread = 1.0f;
             p.glossLineAlpha = 30;
             break;
-        case PanelStyle::Aero:
-            p.tintR = light ? 255 : 18;
-            p.tintG = light ? 255 : 22;
-            p.tintB = light ? 255 : 32;
-            p.tintAlpha = light ? 38 : 60;
-            p.shadeAlpha = 14;
-            p.bottomShadeAlpha = 38;
-            p.glossAlpha = 110;
-            p.glossHeight = 0.44f;
-            p.bottomLightAlpha = 30;
-            p.bottomLightHeight = 0.20f;
-            p.rimDarkAlpha = 34;
-            p.rimWhiteTop = 215;
-            p.rimWhiteBottom = 80;
-            p.rimWidth = 1.9f;
-            p.noiseAlpha = 4;
-            p.shadowAlpha = 10;
-            p.shadowSpread = 1.4f;
-            p.glossLineAlpha = 180;
-            p.aeroGloss = true;
-            p.useOuterGlow = true;
-            p.outerGlowAlpha = 55;
-            break;
         case PanelStyle::Liquid:
             p.tintR = light ? 247 : 14;
             p.tintG = light ? 250 : 17;
@@ -847,25 +801,6 @@ PanelPalette BuildPanelPalette() {
             p.specularAlpha = light ? 110 : 90;
             p.glossLineAlpha = 150;
             p.useRefraction = true;
-            break;
-        case PanelStyle::Dark:
-            p.tintR = 6;
-            p.tintG = 8;
-            p.tintB = 12;
-            p.tintAlpha = 150;
-            p.shadeAlpha = 10;
-            p.bottomShadeAlpha = 20;
-            p.glossAlpha = 14;
-            p.glossHeight = 0.20f;
-            p.rimDarkAlpha = 35;
-            p.rimWhiteTop = 65;
-            p.rimWhiteBottom = 22;
-            p.rimWidth = 1.0f;
-            p.noiseAlpha = 4;
-            p.shadowAlpha = 12;
-            p.shadowSpread = 1.45f;
-            p.innerShadowAlpha = 60;
-            p.glossLineAlpha = 45;
             break;
         default:
             p.drawBackdrop = false;
@@ -1910,8 +1845,7 @@ void CaptureBackdrop() {
                              StyleContrast(g_settings.backgroundStyle));
 
         g_backdropLuminance = ComputeBitmapLuminance(*small);
-        if (g_settings.tone == PanelTone::Auto &&
-            g_settings.backgroundStyle != PanelStyle::Dark) {
+        if (g_settings.tone == PanelTone::Auto) {
             if (g_backdropLuminance > 0.58) {
                 g_autoLightPanel = true;
             } else if (g_backdropLuminance < 0.42) {
@@ -1931,22 +1865,6 @@ void CaptureBackdrop() {
         g_backdropValid = false;
     }
     DeleteObject(dib);
-}
-
-void DrawPanelOuterGlow(Graphics& graphics, const RectF& panel, float radius,
-                        const PanelPalette& palette) {
-    if (!palette.useOuterGlow || palette.outerGlowAlpha == 0) return;
-    for (int i = 2; i >= 1; --i) {
-        double expand = (4.0 + i * 5.0) * g_dpiScale;
-        RectF glowRect(panel.X - (REAL)expand, panel.Y - (REAL)expand,
-                       panel.Width + (REAL)(expand * 2.0),
-                       panel.Height + (REAL)(expand * 2.0));
-        GraphicsPath path;
-        AddRoundedRect(path, glowRect, radius + (float)expand);
-        Pen pen(Color((BYTE)(palette.outerGlowAlpha / (i + 2)), 96, 165, 250),
-                (REAL)(4.0 * g_dpiScale));
-        graphics.DrawPath(&pen, &path);
-    }
 }
 
 void DrawPanelShadow(Graphics& graphics, const RectF& panel, float radius,
@@ -2061,7 +1979,6 @@ void DrawPanel(Graphics& graphics, const RectF& panel, float radius,
     GraphicsPath panelPath;
     AddRoundedRect(panelPath, panel, radius);
 
-    DrawPanelOuterGlow(graphics, panel, radius, palette);
     DrawPanelShadow(graphics, panel, radius, palette);
 
     GraphicsState state = graphics.Save();
@@ -2116,15 +2033,6 @@ void DrawPanel(Graphics& graphics, const RectF& panel, float radius,
             glossRect, Color(palette.glossAlpha, 255, 255, 255),
             Color(0, 255, 255, 255), LinearGradientModeVertical);
         graphics.FillRectangle(&gloss, glossRect);
-
-        if (palette.aeroGloss) {
-            RectF band(panel.X, panel.Y + panel.Height * 0.20f, panel.Width,
-                       panel.Height * 0.10f);
-            LinearGradientBrush bandBrush(
-                band, Color((BYTE)(palette.glossAlpha * 0.55), 255, 255, 255),
-                Color(0, 255, 255, 255), LinearGradientModeVertical);
-            graphics.FillRectangle(&bandBrush, band);
-        }
     }
 
     if (palette.bottomLightAlpha && palette.bottomLightHeight > 0.0f) {
@@ -2143,12 +2051,6 @@ void DrawPanel(Graphics& graphics, const RectF& panel, float radius,
             TextureBrush noise(g_noiseTexture.get(), WrapModeTile);
             graphics.FillPath(&noise, &panelPath);
         }
-    }
-
-    if (palette.innerShadowAlpha) {
-        Pen innerPen(Color(palette.innerShadowAlpha, 0, 0, 0),
-                     (REAL)(12.0 * g_dpiScale));
-        graphics.DrawPath(&innerPen, &panelPath);
     }
 
     if (g_layout.maxScale > 1.0) {
