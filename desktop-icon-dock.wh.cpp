@@ -190,10 +190,14 @@ desktop icons.
 
 ## Adjusting the position
 
-![Moving the dock by its edges](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-move.gif)
+![Moving the dock vertically](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-move.gif)
 
-*Drag the top or bottom edge to move the dock vertically, or the left or
-right edge to move it horizontally; the position is saved automatically.*
+*Drag the top or bottom edge to move vertically; the dock position is saved
+automatically.*
+
+![Moving the dock horizontally](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-move-horizontal.gif)
+
+*Drag the left or right edge to move horizontally.*
 
 - **Drag the edges**: the top and bottom edges move the dock vertically; the
   left and right edges move it horizontally. Each edge moves the dock only
