@@ -1,10 +1,8 @@
 // ==WindhawkMod==
 // @id              desktop-icon-dock
 // @name            Desktop Icon Dock
-// @name:zh-CN      桌面图标 Dock
-// @description     A standalone macOS-style dock: drag shortcuts, files and folders onto it, reorder them, drag them out to put them back on the desktop; shortcuts are copied into a dock-owned folder so desktop cleanups do not affect the dock; six background styles from clear to Liquid Glass
-// @description:zh-CN 独立的 macOS 风格 Dock：把快捷方式、文件和文件夹拖进来，拖动排序，拖出放回桌面；快捷方式会复制到 Dock 自己的目录，清理桌面不影响 Dock；提供从透明到液态玻璃的六种背景风格
-// @version         2.1.0
+// @description     A standalone macOS-style desktop dock. Drag shortcuts, files and folders in, reorder them, or drag them back to the desktop. It keeps its own list, can be moved by its edges, and offers six background styles.
+// @version         2.3.1
 // @author          yizqq0721
 // @github          https://github.com/yizqq0721
 // @include         explorer.exe
@@ -19,8 +17,8 @@
 Turns shortcuts, files and folders that you drag onto it into a centered
 macOS-style dock. The dock is an independent list, not a mirror of the
 desktop. A fully transparent background is used by default, showing only the
-icons; five panel materials are available, from a thin clear shell through
-Frosted, Acrylic and Mica to a rebuilt Liquid Glass.
+icons; choose one of five panel materials for a visible background: Clear,
+Frosted, Acrylic, Mica, or Liquid Glass.
 
 ![Desktop Icon Dock preview](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-preview-transparent.jpg)
 
@@ -53,6 +51,17 @@ magnified with its label shown.*
   because the list is empty.
 - **macOS-style hover magnification**: icons grow smoothly as the pointer
   approaches, with cosine falloff and neighboring icons spreading aside.
+- **Move by the edges**: drag the top or bottom edge to move the dock
+  vertically, or the left or right edge to move it horizontally; each edge
+  moves the dock only along its own axis. The position is saved automatically
+  and restored on the next start. Edges are available with a visible panel
+  style; the transparent style has no border to grab.
+- **Position reset actions**: right-click an empty part of the dock, or use
+  the "Dock position action" setting, to reset the position to the default
+  (centered, panel bottom 80 px above the taskbar), to center it horizontally,
+  or to reset only the distance from the taskbar.
+- **Adjustable corners**: the corner roundness of the panel can be set from
+  square (0%) to fully rounded (100%).
 - **Transparent background (default)**: only the icons and a soft drop shadow
   are drawn, so the dock blends into the wallpaper; transparent areas of the
   dock window are click-through, so desktop right-click and clicks keep
@@ -63,9 +72,9 @@ magnified with its label shown.*
   the screen above the dock and works with Wallpaper Engine and other animated
   wallpapers. "Panel tone" can force a light or dark material, or follow the
   wallpaper automatically.
-- **Name labels**: hovering an icon shows a name pill above it; in transparent
-  mode the pill stays at a fixed position instead of jumping while icons
-  scale.
+- **Name labels**: hovering an icon shows a name pill above it, using the
+  active panel tone; in transparent mode the pill stays at a fixed position
+  instead of jumping while icons scale.
 - **Native interaction**: left click opens an item; right click opens that
   item's native Explorer context menu (open, send to, create shortcut,
   properties, delete, ...).
@@ -81,6 +90,30 @@ magnified with its label shown.*
   unloaded. Off by default, so the desktop remains available as a drag source.
 - **Icon cache with cleanup**: icons are cached per item path and reused;
   virtual items such as the Recycle Bin refresh their icons periodically.
+
+## Background styles
+
+- **Transparent** (default): only the icons and their shadows are drawn, so
+  the dock blends into the wallpaper. Transparent areas remain click-through.
+- **Clear**: a thin translucent tint with a light rim and no blur, like a clear
+  shell. It is the lightest visible panel.
+- **Frosted**: a balanced blur, a soft milky tint, and fine noise. It is the
+  safest general-purpose glass material.
+- **Acrylic**: stronger blur, higher saturation, a thicker tint, and more
+  visible grain, similar to a Windows flyout.
+- **Mica**: a wallpaper-tinted, low-saturation, nearly opaque panel. It is
+  quiet and suited to an always-visible dock.
+- **Liquid Glass**: a milky blur with a specular rim, an iridescent inner
+  line, pointer-following highlights, and a faint edge refraction. Its tone
+  follows the Panel tone setting and adapts to the wallpaper in Auto mode.
+
+Each style also follows the **Panel tone** setting: Light, Dark, or Auto. The
+transparent style ignores the tone. The default is **Transparent**; select a
+panel style in the mod settings.
+
+When upgrading from 1.x, the old transparent-background toggle and glass
+sliders are replaced by Background style and Panel tone; choose a panel style
+again if you previously used the glass panel.
 
 ## How it works
 
@@ -115,9 +148,20 @@ desktop icons.
   the system "align icons to grid" setting.
 - **Empty state**: the centered hint pill is drawn with a non-transparent
   background and is registered as part of the same drop target.
-- **Layout**: centered horizontally at the bottom of the primary monitor,
-  above the taskbar; the panel widens as items are added, and icons are
-  vertically centered at rest.
+- **Layout**: the default position is horizontally centered with the panel's
+  bottom edge 80 px above the taskbar (at 100% DPI); the panel widens as items
+  are added, and icons are vertically centered at rest.
+- **Moving**: the top and bottom edges move the dock vertically, and the left
+  and right edges move it horizontally. The bottom distance is measured from
+  the lower edge of the panel to the top of the taskbar, so 0 means the panel
+  touches the taskbar. The position is stored in the mod's local values and
+  survives restarts and Explorer restarts without a settings change. The dock
+  stays inside the primary monitor (the transparent glow margin may overhang
+  it).
+- **Reset actions**: right-clicking an empty part of the dock opens the three
+  position actions described under "Adjusting the position". They are
+  available with a panel style; in the transparent style the empty-state hint
+  can be used while the dock is empty.
 - **Maintenance**: every 30 seconds, entries that failed to resolve earlier
   are retried and the icons of virtual items are refreshed. Items that still
   cannot be resolved are skipped on screen but kept in storage.
@@ -135,12 +179,50 @@ desktop icons.
 | Effect radius | 160 | Distance in pixels over which magnification fades out from the cursor |
 | Neighbor spread (%) | 60 | How much neighboring icons move aside while magnifying |
 | Smoothing speed | 16 | Higher is snappier, lower is softer |
-| Bottom offset | 10 | Gap between the dock and the taskbar, in pixels at 100% DPI |
+| Bottom offset | 10 | Kept for compatibility: it positions the dock until the dock is moved or reset, after which the saved bottom distance is used |
+| Corner radius (%) | 72 | Corner roundness of the panel; 0 = square corners, 100 = fully rounded |
+| Dock position action | Keep current position | One-shot position action from the settings page: reset the position, center only, or reset the bottom distance only. The same actions are available by right-clicking an empty part of the dock |
 | Background style | Transparent | Transparent, Clear, Frosted, Acrylic, Mica or Liquid Glass |
 | Panel tone | Auto | Light, Dark or Auto (follow the wallpaper) for panel styles |
 | Show labels | On | Show a name pill for the hovered item |
 | Hide original desktop icons | Off | Hide the system desktop icons while the dock is active by hiding the desktop list view in memory; they are shown again when the mod is unloaded |
 | Backdrop refresh interval (s) | 20 | How often the blurred backdrop used by the panel is re-sampled; 0 disables refresh |
+
+## Adjusting the position
+
+![Moving the dock vertically](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-move.gif)
+
+*Drag the top or bottom edge to move vertically; the dock position is saved
+automatically.*
+
+![Moving the dock horizontally](https://raw.githubusercontent.com/yizqq0721/desktop-icon-dock/main/images/dock-move-horizontal.gif)
+
+*Drag the left or right edge to move horizontally.*
+
+- **Drag the edges**: the top and bottom edges move the dock vertically; the
+  left and right edges move it horizontally. Each edge moves the dock only
+  along its own axis.
+- **Right-click an empty part of the dock** to open the three reset actions:
+  - **Reset position**: centered horizontally, with the panel's bottom edge
+    80 px above the taskbar.
+  - **Center horizontally**: keeps the current distance from the taskbar.
+  - **Reset distance from the taskbar**: sets it back to 80 px.
+- **From the settings page**: the **Dock position action** setting offers the
+  same three actions plus "Keep current position". The selected action is
+  applied once when it changes; select "Keep current position" and save, then
+  select the action again, to repeat it. The setting description also points
+  to the right-click menu.
+- **What the numbers mean**: the bottom distance is measured from the lower
+  edge of the panel to the top of the taskbar, so 0 means the panel touches
+  the taskbar; the reset/default value is 80 px at 100% DPI. The horizontal
+  position is centered by default.
+- **Saving**: the position is written to the mod's local values immediately
+  when a drag ends or a reset action is used. No settings save is needed; the
+  position survives restarts and Explorer restarts. The legacy Bottom offset
+  setting is only used until the first move or reset.
+- **Transparent style**: it has no visible border or background. Use a panel
+  style, or the empty-state hint while the dock is empty, to reach the reset
+  actions.
 
 ## How it differs from existing mods
 
@@ -158,8 +240,9 @@ not a launcher that stays on top of other windows.
 - **Desktop integration**: hiding the system desktop icons in memory and
   opening the native Explorer context menu both work with the shell's desktop
   view from the mod's own process, without injecting into the running shell.
-- **Screen-sampled glass**: the backdrop and the name pills sample the screen
-  area behind the dock, which requires a desktop-level window.
+- **Screen-sampled panel**: the panel backdrop is sampled from the screen
+  above the dock, which requires a desktop-level window. Name pills use the
+  active panel tone instead of a second glass surface.
 
 ## Compatibility and limitations
 
@@ -168,12 +251,14 @@ not a launcher that stays on top of other windows.
   the shell is only accessed through its published shell interfaces. (The
   windhawk.exe host cannot be used here: Windhawk is a 32-bit app, while this
   mod is x86-64.)
-- Primary monitor only; the dock is anchored to the bottom of the primary
-  monitor, above the taskbar.
+- Primary monitor only; the dock starts at the bottom of the primary monitor,
+  above the taskbar, and can be moved by its edges within that monitor.
 - The dock is a layered window placed below normal windows; full-screen apps
   and other windows cover it, which is expected.
 - In transparent mode, fully transparent pixels are click-through; the icons
-  themselves remain clickable.
+  themselves remain clickable. There is no visible border to drag and no
+  background to right-click, so edge moving and the position reset actions
+  require a panel style (or the empty-state hint while the dock is empty).
 
 ## Troubleshooting
 
@@ -198,21 +283,6 @@ not a launcher that stays on top of other windows.
   deletes the mod's storage, including the list and the shortcut copies, when
   the mod is removed.
 
-## 中文说明
-
-本模组把快捷方式、文件和文件夹变成一个居中的 macOS 风格 Dock，默认使用全透明背景；也可以选择透壳、毛玻璃、亚克力、云母或液态玻璃面板，并用“面板色调”强制浅色/深色或自动跟随壁纸。
-
-- 从桌面、资源管理器或 `shell:Desktop` 窗口把项目拖到 Dock 上即可添加，落点决定插入位置，重复项目会被忽略。快捷方式（`.lnk` / `.url`）会复制到 Dock 自己的目录，删除桌面上的原快捷方式不影响 Dock；文件和文件夹按路径引用。
-- 按住图标在 Dock 内拖动可实时排序；拖到 Dock 外、在桌面上松手会把项目放回桌面，图标落在松手位置。项目原本就在桌面上时移动原图标；否则在桌面新建指向它的快捷方式，原文件或文件夹保持原位；对于复制进来的快捷方式会优先使用原快捷方式，不会产生多余的 `(2)` 副本；在其他窗口上松手则项目留在 Dock。回收站等虚拟项目仅从 Dock 移除；Dock 副本在放回桌面后删除。移除最后一项后显示空状态提示。
-- Dock 是独立列表，不同步桌面；列表保存在 Windhawk 模组存储的 `items.tsv` 中，并按当前用户 SID 分目录，顺序即显示顺序，重启 Explorer 后保持；快捷方式副本位于同一目录的 `Items` 子目录。卸载模组时 Windhawk 会删除整个存储目录。
-- 图标支持悬停放大、相邻图标让位和名称标签；左键打开，右键打开资源管理器原生菜单。
-- “隐藏原始桌面图标”默认关闭；开启后仅在内存中隐藏桌面列表视图，卸载模组后自动恢复。
-- 背景有 6 种风格：透明、透壳、毛玻璃、亚克力、云母、液态玻璃；每种风格有独立的模糊、色调、饱和度、噪点、边缘高光和镜面高光参数，“面板色调”可选浅色/深色/自动。
-- 解析失败的项目会跳过显示但保留在存储中，每 30 秒只重试此前失败的项目；回收站等虚拟项目的图标会定期刷新。
-- 与 Quick Launch Dock 等启动器 Dock 的区别：本模组位于桌面层级（所有普通窗口之下）、不抢焦点，支持把项目拖回桌面并复用原快捷方式，还提供隐藏系统桌面图标和屏幕采样玻璃背景；这些行为通过 Shell 桌面视图完成，模组本身运行在独立的 explorer.exe tool-mod 进程中，与正在运行的 Shell 进程分离（Windhawk 主程序为 32 位，无法承载本 x86-64 模组）。
-- 仅支持 x86-64 的 Windows 10/11，且只在主显示器底部显示。
-
-各设置项的说明见上方英文表格。
 */
 // ==/WindhawkModReadme==
 
@@ -220,44 +290,39 @@ not a launcher that stays on top of other windows.
 /*
 - IconSize: 48
   $name: Icon size
-  $name:zh-CN: 图标大小
   $description: Base icon size in pixels (at 100% DPI scaling)
-  $description:zh-CN: 图标的基础像素大小（100% DPI 缩放时）
 - Spacing: 10
   $name: Icon spacing
-  $name:zh-CN: 图标间距
   $description: Gap between icons at rest, in pixels
-  $description:zh-CN: 静止状态下图标之间的像素间距
 - MaxScale: 175
   $name: Maximum scale (%)
-  $name:zh-CN: 最大放大比例（%）
   $description: How large the hovered icon grows (175 = 1.75x)
-  $description:zh-CN: 鼠标悬停时图标的最大放大倍数（175 = 1.75 倍）
 - EffectRadius: 160
   $name: Effect radius
-  $name:zh-CN: 效果半径
   $description: Distance from the cursor where magnification fades out, in pixels
-  $description:zh-CN: 放大效果从光标向外衰减的距离（像素）
 - SpacingFactor: 60
   $name: Neighbor spread (%)
-  $name:zh-CN: 相邻扩散（%）
   $description: How much neighboring icons move aside while magnifying
-  $description:zh-CN: 放大时相邻图标向外让位的程度
 - Smoothing: 16
   $name: Smoothing speed
-  $name:zh-CN: 平滑速度
   $description: Higher is snappier, lower is softer
-  $description:zh-CN: 数值越大越跟手，越小越柔和
 - BottomOffset: 10
   $name: Bottom offset
-  $name:zh-CN: 底部偏移
   $description: Gap between the dock and the taskbar, in pixels
-  $description:zh-CN: Dock 与任务栏之间的间距（像素）
+- CornerRadius: 72
+  $name: Corner radius (%)
+  $description: Roundness of the dock panel corners; 0 draws square corners and 100 draws fully rounded ones
+- PositionAction: keep
+  $name: Dock position action
+  $description: Applies once when the selection changes. Reset moves the dock to the default position; the same three actions are also available by right-clicking an empty part of the dock. Select "Keep current position" and save, then select an action again, to repeat it.
+  $options:
+  - keep: Keep current position
+  - reset: Reset position (centered, 80 px from the taskbar)
+  - center: Center horizontally
+  - reset-bottom: Reset distance from the taskbar (80 px)
 - BackgroundStyle: transparent
   $name: Background style
-  $name:zh-CN: 背景风格
   $description: Panel material used when the dock has a background. "Transparent" draws only the icons.
-  $description:zh-CN: Dock 有背景时使用的面板材质；“透明”只绘制图标。
   $options:
   - transparent: Transparent (icons only)
   - clear: Clear shell
@@ -265,41 +330,22 @@ not a launcher that stays on top of other windows.
   - acrylic: Acrylic
   - mica: Mica
   - liquid: Liquid Glass
-  $options:zh-CN:
-  - transparent: 透明（仅图标）
-  - clear: 透壳
-  - frosted: 毛玻璃
-  - acrylic: 亚克力
-  - mica: 云母
-  - liquid: 液态玻璃
 - Tone: auto
   $name: Panel tone
-  $name:zh-CN: 面板色调
   $description: Light, dark, or automatic based on the wallpaper behind the dock. Ignored by the transparent style.
-  $description:zh-CN: 浅色、深色或根据 Dock 后方壁纸自动选择；透明风格忽略此项。
   $options:
   - auto: Auto (follow wallpaper)
   - light: Light
   - dark: Dark
-  $options:zh-CN:
-  - auto: 自动（跟随壁纸）
-  - light: 浅色
-  - dark: 深色
 - ShowLabels: true
   $name: Show labels
-  $name:zh-CN: 显示名称
   $description: Show the name of the hovered item in a floating name pill
-  $description:zh-CN: 悬停时在浮动名称胶囊中显示名称
 - HideDesktopIcons: false
   $name: Hide original desktop icons
-  $name:zh-CN: 隐藏原始桌面图标
   $description: Hide the original desktop icons while the dock is active by hiding the desktop list view in memory; restored on unload. Off by default so the desktop stays available as a drag source
-  $description:zh-CN: 启用 Dock 时在内存中隐藏桌面列表视图，不修改系统设置；卸载时恢复。默认关闭，便于随时从桌面拖入项目
 - BackdropRefreshSeconds: 20
   $name: Backdrop refresh interval (s)
-  $name:zh-CN: 背景刷新间隔（秒）
   $description: How often the blurred backdrop used by the panel is re-sampled; 0 disables refresh
-  $description:zh-CN: 多久重新采样一次面板所使用的模糊背景；0 表示不自动刷新
 */
 // ==/WindhawkModSettings==
 
@@ -354,6 +400,8 @@ constexpr int kHoverPollMs = 50;
 constexpr int kIconRequestPx = 256;
 constexpr int kMaintenanceSeconds = 30;
 constexpr int kDragThresholdPx = 5;
+constexpr int kDefaultBottomDistance = 80;
+constexpr int kMissingLocalValue = -1000000;
 constexpr double kPi = 3.14159265358979323846;
 
 enum class PanelStyle {
@@ -379,6 +427,8 @@ struct Settings {
     int spacingFactor = 60;
     int smoothing = 16;
     int bottomOffset = 10;
+    int cornerRadiusPercent = 72;
+    int positionAction = 0;
     PanelStyle backgroundStyle = PanelStyle::Transparent;
     PanelTone tone = PanelTone::Auto;
     int showLabels = 1;
@@ -481,7 +531,32 @@ int g_windowX = 0;
 int g_windowY = 0;
 int g_windowWidth = 0;
 int g_windowHeight = 0;
+int g_dockOffsetX = 0;
+// Distance from the top of the taskbar to the panel's bottom edge, in DIPs.
+// -1 means "not stored yet": it is derived from the legacy Bottom offset
+// setting until the dock is moved or reset.
+int g_dockBottomDistance = -1;
+int g_legacyOffsetY = 0;
 RECT g_lastWorkArea{};
+
+enum class DockEdge {
+    None,
+    Top,
+    Bottom,
+    Left,
+    Right,
+};
+
+enum class DockMoveAxis {
+    None,
+    Horizontal,
+    Vertical,
+};
+
+DockMoveAxis g_dockMoveAxis = DockMoveAxis::None;
+POINT g_dockMoveStartCursor{};
+int g_dockMoveStartWindowX = 0;
+int g_dockMoveStartWindowY = 0;
 
 double g_panelWidth = 0.0;
 double g_intensity = 0.0;
@@ -584,6 +659,14 @@ double Falloff(double distance) {
     if (distance >= radius) return 0.0;
     double t = distance / radius;
     return (std::cos(t * kPi) + 1.0) * 0.5;
+}
+
+// The setting is a percentage of the half height, so 100 percent produces a
+// fully rounded (pill) end and 0 produces square corners.
+float PanelCornerRadius(double panelHeight) {
+    double percent =
+        ClampDouble(g_settings.cornerRadiusPercent / 100.0, 0.0, 1.0);
+    return (float)(panelHeight * 0.5 * percent);
 }
 
 void AddRoundedRect(GraphicsPath& path, const RectF& rect, float radius) {
@@ -828,6 +911,21 @@ void LoadSettings() {
     s.spacingFactor = ClampInt(Wh_GetIntSetting(L"SpacingFactor"), 0, 100);
     s.smoothing = ClampInt(Wh_GetIntSetting(L"Smoothing"), 1, 60);
     s.bottomOffset = ClampInt(Wh_GetIntSetting(L"BottomOffset"), 0, 300);
+    s.cornerRadiusPercent =
+        ClampInt(Wh_GetIntSetting(L"CornerRadius"), 0, 100);
+
+    PCWSTR actionValue = Wh_GetStringSetting(L"PositionAction");
+    std::wstring actionText = actionValue ? actionValue : L"";
+    if (actionValue) Wh_FreeStringSetting(actionValue);
+    if (actionText == L"reset") {
+        s.positionAction = 1;
+    } else if (actionText == L"center") {
+        s.positionAction = 2;
+    } else if (actionText == L"reset-bottom") {
+        s.positionAction = 3;
+    } else {
+        s.positionAction = 0;
+    }
 
     PCWSTR styleValue = Wh_GetStringSetting(L"BackgroundStyle");
     std::wstring styleText = styleValue ? styleValue : L"";
@@ -1705,6 +1803,60 @@ RECT PanelClientRect() {
     return rect;
 }
 
+// The rest geometry is the dock at its un-hovered size. Edge dragging and edge
+// hover use it, so the hit zones stay put while the panel grows and shrinks
+// with the pointer. Without it, a zone based on the animated panel would move
+// away from the cursor as soon as magnification starts or stops.
+RECT RestPanelClientRect() {
+    RECT rect{};
+    int width = g_layout.panelBaseWidth;
+    rect.left = (g_layout.windowWidth - width) / 2;
+    rect.right = rect.left + width;
+    rect.top = g_layout.panelBottom - g_layout.panelHeightRest;
+    rect.bottom = g_layout.panelBottom;
+    return rect;
+}
+
+DockEdge PanelEdgeAtClientPoint(POINT point) {
+    if (IsTransparentStyle()) return DockEdge::None;
+    RECT panel = RestPanelClientRect();
+    if (point.x < panel.left || point.x > panel.right || point.y < panel.top ||
+        point.y > panel.bottom) {
+        return DockEdge::None;
+    }
+    int band = std::max(4, (int)lround(6 * g_dpiScale));
+    int bestDistance = band + 1;
+    DockEdge best = DockEdge::None;
+    int distance = point.x - panel.left;
+    if (distance <= band && distance < bestDistance) {
+        best = DockEdge::Left;
+        bestDistance = distance;
+    }
+    distance = panel.right - point.x;
+    if (distance <= band && distance < bestDistance) {
+        best = DockEdge::Right;
+        bestDistance = distance;
+    }
+    distance = point.y - panel.top;
+    if (distance <= band && distance < bestDistance) {
+        best = DockEdge::Top;
+        bestDistance = distance;
+    }
+    distance = panel.bottom - point.y;
+    if (distance <= band && distance < bestDistance) {
+        best = DockEdge::Bottom;
+        bestDistance = distance;
+    }
+    return best;
+}
+
+DockEdge PanelEdgeAtScreenPoint(POINT screenPoint) {
+    if (!g_hwnd) return DockEdge::None;
+    POINT point = screenPoint;
+    ScreenToClient(g_hwnd, &point);
+    return PanelEdgeAtClientPoint(point);
+}
+
 RectF IconRectFor(const DockItem& item) {
     double size = g_layout.iconPx * item.scale;
     double lift = 0.0;
@@ -1735,20 +1887,60 @@ double CurrentPanelTop() {
     return g_layout.panelBottom - CurrentPanelHeight();
 }
 
-void PositionWindow() {
+int BaseWindowX() {
+    MONITORINFO monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    GetMonitorInfoW(monitor, &monitorInfo);
+    int monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+    return monitorInfo.rcMonitor.left + (monitorWidth - g_windowWidth) / 2;
+}
+
+// The bottom distance is measured from the bottom edge of the panel to the
+// top of the taskbar (the work area bottom), so 0 means the panel touches the
+// taskbar. Until the dock is moved or reset, the value follows the legacy
+// Bottom offset setting plus any offset left by the previous version.
+int EffectiveBottomDistance() {
+    if (g_dockBottomDistance >= 0) return g_dockBottomDistance;
+    int glowDip = (int)lround(g_layout.glowMargin / std::max(0.1, g_dpiScale));
+    return ClampInt(g_settings.bottomOffset + glowDip + g_legacyOffsetY, 0,
+                    20000);
+}
+
+// The window may overhang the monitor by its transparent glow margin, and it
+// may overhang the work area bottom by that margin so the panel itself can
+// touch the taskbar and the bottom distance can reach 0.
+void ClampWindowOrigin(int& x, int& y) {
     MONITORINFO monitorInfo{};
     monitorInfo.cbSize = sizeof(monitorInfo);
     HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
     GetMonitorInfoW(monitor, &monitorInfo);
 
+    int minX = monitorInfo.rcMonitor.left - g_layout.glowMargin;
+    int maxX = monitorInfo.rcMonitor.right - g_windowWidth + g_layout.glowMargin;
+    if (maxX < minX) maxX = minX;
+    int minY = monitorInfo.rcMonitor.top;
+    int maxY = monitorInfo.rcWork.bottom - g_layout.panelBottom;
+    if (maxY < minY) maxY = minY;
+    x = ClampInt(x, minX, maxX);
+    y = ClampInt(y, minY, maxY);
+}
+
+void PositionWindow() {
     g_windowWidth = g_layout.windowWidth;
     g_windowHeight = g_layout.windowHeight;
-    int monitorWidth = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-    g_windowX = monitorInfo.rcMonitor.left + (monitorWidth - g_windowWidth) / 2;
-    int bottom = monitorInfo.rcWork.bottom -
-                 (int)lround(g_settings.bottomOffset * g_dpiScale);
-    g_windowY = bottom - g_windowHeight;
-    if (g_windowY < monitorInfo.rcMonitor.top) g_windowY = monitorInfo.rcMonitor.top;
+    MONITORINFO monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    GetMonitorInfoW(monitor, &monitorInfo);
+
+    int x = BaseWindowX() + (int)lround(g_dockOffsetX * g_dpiScale);
+    int y = monitorInfo.rcWork.bottom -
+            (int)lround(EffectiveBottomDistance() * g_dpiScale) -
+            g_layout.panelBottom;
+    ClampWindowOrigin(x, y);
+    g_windowX = x;
+    g_windowY = y;
     g_lastWorkArea = monitorInfo.rcWork;
 
     SetWindowPos(g_hwnd, HWND_BOTTOM, g_windowX, g_windowY, g_windowWidth,
@@ -1877,7 +2069,8 @@ void DrawPanelShadow(Graphics& graphics, const RectF& panel, float radius,
                          panel.Width + (REAL)(expand * 2.0f),
                          panel.Height + (REAL)(expand * 2.0f));
         GraphicsPath path;
-        AddRoundedRect(path, shadowRect, radius + (float)expand);
+        AddRoundedRect(path, shadowRect,
+                       radius >= 0.5f ? radius + (float)expand : 0.0f);
         SolidBrush brush(Color(palette.shadowAlpha, 0, 0, 0));
         graphics.FillPath(&brush, &path);
     }
@@ -1904,7 +2097,8 @@ void DrawPanelRim(Graphics& graphics, GraphicsPath& panelPath, const RectF& pane
         RectF innerRect(panel.X + 1.5f, panel.Y + 1.5f, panel.Width - 3.0f,
                         panel.Height - 3.0f);
         GraphicsPath innerPath;
-        AddRoundedRect(innerPath, innerRect, std::max(1.0f, radius - 1.5f));
+        AddRoundedRect(innerPath, innerRect,
+                       radius >= 2.0f ? radius - 1.5f : 0.0f);
 
         BYTE a = palette.iridescentAlpha;
         Color iridColors[] = {
@@ -2224,7 +2418,8 @@ void DrawEmptyState(Graphics& graphics, const RECT& panelRect) {
 
     EnsureEmptyFonts();
     GraphicsPath panelPath;
-    AddRoundedRect(panelPath, panel, panel.Height * 0.30f);
+    float panelRadius = PanelCornerRadius(panel.Height);
+    AddRoundedRect(panelPath, panel, panelRadius);
 
     for (int i = 3; i >= 1; --i) {
         double expand = i * 1.4 * g_dpiScale;
@@ -2233,7 +2428,7 @@ void DrawEmptyState(Graphics& graphics, const RECT& panelRect) {
                          panel.Height + (REAL)expand * 2);
         GraphicsPath shadowPath;
         AddRoundedRect(shadowPath, shadowRect,
-                       (float)(panel.Height * 0.30 + expand));
+                       panelRadius >= 0.5f ? panelRadius + (float)expand : 0.0f);
         SolidBrush shadow(Color((BYTE)(9 * i), 0, 0, 0));
         graphics.FillPath(&shadow, &shadowPath);
     }
@@ -2302,7 +2497,7 @@ void DrawDropBackdrop(Graphics& graphics, const RECT& panelRect) {
                 (REAL)(panelRect.right - panelRect.left),
                 (REAL)(panelRect.bottom - panelRect.top));
     if (panel.Width < 8.0f || panel.Height < 8.0f) return;
-    float radius = (float)(g_layout.panelHeightRest * 0.36);
+    float radius = PanelCornerRadius(g_layout.panelHeightRest);
     GraphicsPath path;
     AddRoundedRect(path, panel, radius);
     if (IsTransparentStyle()) {
@@ -2416,7 +2611,7 @@ void RenderFrame() {
         double panelHeightNow = g_layout.panelBottom - panelTopNow;
         RectF panel((REAL)x, (REAL)panelTopNow, (REAL)width,
                     (REAL)panelHeightNow);
-        float radius = (float)(panelHeightNow * 0.36);
+        float radius = PanelCornerRadius(panelHeightNow);
         DrawPanel(graphics, panel, radius, BuildPanelPalette());
         labelAnchor = panelTopNow;
     }
@@ -2436,7 +2631,7 @@ void RenderFrame() {
 }
 
 void EnsureAnimationTimer() {
-    if (!g_hwnd) return;
+    if (!g_hwnd || g_dockMoveAxis != DockMoveAxis::None) return;
     if (!g_animationTimerRunning) {
         g_lastTickTime = std::chrono::steady_clock::now();
         SetTimer(g_hwnd, kTimerAnimation, 15, nullptr);
@@ -2482,6 +2677,7 @@ void UpdateHoverPollTimer() {
 
 bool UpdateAnimation() {
     if (g_items.empty() || !g_hwnd) return false;
+    if (g_dockMoveAxis != DockMoveAxis::None) return false;
 
     auto now = std::chrono::steady_clock::now();
     double dt = std::chrono::duration<double>(now - g_lastTickTime).count();
@@ -2493,7 +2689,11 @@ bool UpdateAnimation() {
     POINT clientPoint = screenPoint;
     ScreenToClient(g_hwnd, &clientPoint);
     bool dragging = g_internalDragActive || g_externalDragActive;
-    bool inside = !dragging && IsPointerOverDock(screenPoint);
+    // An edge belongs to moving the dock, not to magnification. Suppressing
+    // hover keeps the panel at its rest size, which is also the geometry the
+    // edge zones are based on, so the pointer cannot chase a moving edge.
+    bool onEdge = PanelEdgeAtClientPoint(clientPoint) != DockEdge::None;
+    bool inside = !dragging && !onEdge && IsPointerOverDock(screenPoint);
 
     if (inside) {
         g_lastMouseX = clientPoint.x;
@@ -2607,6 +2807,116 @@ int ItemAtCursor(POINT screenPoint) {
     return best;
 }
 
+void ResetInternalDragState();
+
+void MoveDockWindow(int x, int y) {
+    ClampWindowOrigin(x, y);
+    if (x == g_windowX && y == g_windowY) return;
+    g_windowX = x;
+    g_windowY = y;
+    SetWindowPos(g_hwnd, HWND_BOTTOM, x, y, 0, 0,
+                 SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    CaptureBackdrop();
+    RenderFrame();
+}
+
+// The position is kept in Windhawk's mod-local values rather than in the user
+// settings: it is written silently, has no settings page round trip, and
+// therefore does not reload the mod.
+void SaveDockOffsets() {
+    MONITORINFO monitorInfo{};
+    monitorInfo.cbSize = sizeof(monitorInfo);
+    HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
+    GetMonitorInfoW(monitor, &monitorInfo);
+
+    double scale = std::max(0.1, g_dpiScale);
+    g_dockOffsetX = (int)lround((g_windowX - BaseWindowX()) / scale);
+    int panelBottom = g_windowY + g_layout.panelBottom;
+    g_dockBottomDistance =
+        ClampInt((int)lround((monitorInfo.rcWork.bottom - panelBottom) / scale),
+                 0, 20000);
+    Wh_SetIntValue(L"DockOffsetX", g_dockOffsetX);
+    Wh_SetIntValue(L"DockBottomDistance", g_dockBottomDistance);
+    // The old relative offset must not be applied again after the absolute
+    // bottom distance has been stored.
+    Wh_SetIntValue(L"DockOffsetY", 0);
+    g_legacyOffsetY = 0;
+}
+
+void ApplyDockPosition(int offsetX, int bottomDistance) {
+    g_dockOffsetX = offsetX;
+    g_dockBottomDistance = ClampInt(bottomDistance, 0, 20000);
+    Wh_SetIntValue(L"DockOffsetX", g_dockOffsetX);
+    Wh_SetIntValue(L"DockBottomDistance", g_dockBottomDistance);
+    Wh_SetIntValue(L"DockOffsetY", 0);
+    g_legacyOffsetY = 0;
+    PositionWindow();
+    CaptureBackdrop();
+    RenderFrame();
+}
+
+// The settings page exposes the same three actions as a one-shot selection.
+// Apply it only when the selected action changes, otherwise every settings
+// save or Explorer restart would move the dock again.
+void ApplyPendingPositionAction() {
+    int action = g_settings.positionAction;
+    int applied = Wh_GetIntValue(L"PositionActionApplied", 0);
+    if (action == 0) {
+        if (applied != 0) Wh_SetIntValue(L"PositionActionApplied", 0);
+        return;
+    }
+    if (action == applied) return;
+
+    if (action == 1) {
+        g_dockOffsetX = 0;
+        g_dockBottomDistance = kDefaultBottomDistance;
+    } else if (action == 2) {
+        g_dockOffsetX = 0;
+        g_dockBottomDistance = EffectiveBottomDistance();
+    } else if (action == 3) {
+        g_dockBottomDistance = kDefaultBottomDistance;
+    }
+    Wh_SetIntValue(L"DockOffsetX", g_dockOffsetX);
+    Wh_SetIntValue(L"DockBottomDistance", g_dockBottomDistance);
+    Wh_SetIntValue(L"DockOffsetY", 0);
+    g_legacyOffsetY = 0;
+    Wh_SetIntValue(L"PositionActionApplied", action);
+}
+
+void FinishDockMove(bool releaseCapture) {
+    if (g_dockMoveAxis == DockMoveAxis::None) return;
+    g_dockMoveAxis = DockMoveAxis::None;
+    if (releaseCapture && GetCapture() == g_hwnd) ReleaseCapture();
+    SaveDockOffsets();
+    CaptureBackdrop();
+    RenderFrame();
+    if (!g_items.empty()) EnsureAnimationTimer();
+}
+
+void StartDockMove(DockEdge edge, POINT screenPoint) {
+    g_dockMoveAxis = (edge == DockEdge::Top || edge == DockEdge::Bottom)
+                         ? DockMoveAxis::Vertical
+                         : DockMoveAxis::Horizontal;
+    g_dockMoveStartCursor = screenPoint;
+    g_dockMoveStartWindowX = g_windowX;
+    g_dockMoveStartWindowY = g_windowY;
+    ResetInternalDragState();
+    g_intensity = 0.0;
+    g_hoverIndex = -1;
+    g_mouseXValid = false;
+    for (auto& item : g_items) {
+        item.scale = 1.0;
+        item.centerX = item.baseCenterX;
+        item.labelAlpha = 0.0;
+    }
+    g_panelWidth = g_layout.panelBaseWidth;
+    SetCapture(g_hwnd);
+    SetCursor(LoadCursorW(nullptr, g_dockMoveAxis == DockMoveAxis::Vertical
+                                       ? IDC_SIZENS
+                                       : IDC_SIZEWE));
+    RenderFrame();
+}
+
 void LaunchItem(DockItem& item) {
     SHELLEXECUTEINFOW info{};
     info.cbSize = sizeof(info);
@@ -2702,6 +3012,52 @@ void ShowItemContextMenu(int index, POINT screenPoint) {
     }
 
     DestroyMenu(popup);
+}
+
+// Right-clicking an empty part of the dock opens position actions. Windhawk
+// does not let a mod write its own user settings, so these actions live in the
+// dock itself rather than on the settings page.
+void ShowDockPositionMenu(POINT screenPoint) {
+    constexpr UINT kResetAll = 1;
+    constexpr UINT kCenter = 2;
+    constexpr UINT kResetBottom = 3;
+
+    HMENU popup = CreatePopupMenu();
+    if (!popup) return;
+    AppendMenuW(popup, MF_STRING | MF_GRAYED, 0, L"Dock position");
+    AppendMenuW(popup, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(popup, MF_STRING, kResetAll,
+                L"Reset position (centered, 80 px from the taskbar)");
+    AppendMenuW(popup, MF_STRING, kCenter, L"Center horizontally");
+    AppendMenuW(popup, MF_STRING, kResetBottom,
+                L"Reset distance from the taskbar (80 px)");
+
+    g_menuOpen = true;
+    HWND previousForeground = GetForegroundWindow();
+    LONG_PTR exStyle = GetWindowLongPtrW(g_hwnd, GWL_EXSTYLE);
+    SetWindowLongPtrW(g_hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_NOACTIVATE);
+    SetForegroundWindow(g_hwnd);
+
+    UINT command = TrackPopupMenuEx(popup, TPM_RETURNCMD | TPM_RIGHTBUTTON,
+                                    screenPoint.x, screenPoint.y, g_hwnd, nullptr);
+    PostMessageW(g_hwnd, WM_NULL, 0, 0);
+
+    SetWindowLongPtrW(g_hwnd, GWL_EXSTYLE, exStyle);
+    if (previousForeground && IsWindow(previousForeground) &&
+        previousForeground != g_hwnd) {
+        SetForegroundWindow(previousForeground);
+    }
+    g_menuOpen = false;
+    KeepWindowAtBottom();
+    DestroyMenu(popup);
+
+    if (command == kResetAll) {
+        ApplyDockPosition(0, kDefaultBottomDistance);
+    } else if (command == kCenter) {
+        ApplyDockPosition(0, EffectiveBottomDistance());
+    } else if (command == kResetBottom) {
+        ApplyDockPosition(g_dockOffsetX, kDefaultBottomDistance);
+    }
 }
 
 void PruneIconCache() {
@@ -2852,6 +3208,7 @@ bool RebuildFromList(bool retryFailed = true) {
     g_mouseXValid = false;
 
     ComputeLayout();
+    ApplyPendingPositionAction();
     g_panelWidth = g_layout.panelBaseWidth;
     for (auto& item : g_items) item.centerX = item.baseCenterX;
     EnsureFrameBuffer(g_layout.windowWidth, g_layout.windowHeight);
@@ -3601,6 +3958,19 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_MOUSEMOVE:
+            if (g_dockMoveAxis != DockMoveAxis::None) {
+                POINT point{};
+                GetCursorPos(&point);
+                int x = g_dockMoveStartWindowX;
+                int y = g_dockMoveStartWindowY;
+                if (g_dockMoveAxis == DockMoveAxis::Horizontal) {
+                    x += point.x - g_dockMoveStartCursor.x;
+                } else {
+                    y += point.y - g_dockMoveStartCursor.y;
+                }
+                MoveDockWindow(x, y);
+                return 0;
+            }
             if (!g_trackingMouse) {
                 TRACKMOUSEEVENT track{};
                 track.cbSize = sizeof(track);
@@ -3688,6 +4058,11 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             if (g_externalDragActive || g_menuOpen) return 0;
             POINT point{};
             GetCursorPos(&point);
+            DockEdge edge = PanelEdgeAtScreenPoint(point);
+            if (edge != DockEdge::None) {
+                StartDockMove(edge, point);
+                return 0;
+            }
             int index = ItemAtCursor(point);
             if (index < 0) return 0;
             g_leftDown = true;
@@ -3702,6 +4077,10 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
         }
 
         case WM_LBUTTONUP: {
+            if (g_dockMoveAxis != DockMoveAxis::None) {
+                FinishDockMove(true);
+                return 0;
+            }
             if (g_internalDragActive) {
                 POINT point{};
                 GetCursorPos(&point);
@@ -3726,7 +4105,9 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
         }
 
         case WM_CAPTURECHANGED:
-            if (g_internalDragActive) {
+            if (g_dockMoveAxis != DockMoveAxis::None) {
+                FinishDockMove(false);
+            } else if (g_internalDragActive) {
                 PersistVisibleOrder(-1);
                 ResetInternalDragState();
                 RebuildFromList(true);
@@ -3744,12 +4125,21 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
             int index = ItemAtCursor(point);
             if (index >= 0) {
                 ShowItemContextMenu(index, point);
+            } else {
+                ShowDockPositionMenu(point);
             }
             return 0;
         }
 
         case WM_SETCURSOR: {
             if (LOWORD(lParam) == HTCLIENT) {
+                if (g_dockMoveAxis != DockMoveAxis::None) {
+                    SetCursor(LoadCursorW(
+                        nullptr, g_dockMoveAxis == DockMoveAxis::Vertical
+                                     ? IDC_SIZENS
+                                     : IDC_SIZEWE));
+                    return TRUE;
+                }
                 if (g_internalDragActive) {
                     SetCursor(LoadCursorW(
                         nullptr, g_dragOutside ? IDC_NO : IDC_SIZEALL));
@@ -3757,6 +4147,15 @@ LRESULT CALLBACK DockWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPar
                 }
                 POINT point{};
                 GetCursorPos(&point);
+                DockEdge edge = PanelEdgeAtScreenPoint(point);
+                if (edge != DockEdge::None) {
+                    SetCursor(LoadCursorW(
+                        nullptr, (edge == DockEdge::Top ||
+                                  edge == DockEdge::Bottom)
+                                     ? IDC_SIZENS
+                                     : IDC_SIZEWE));
+                    return TRUE;
+                }
                 int index = ItemAtCursor(point);
                 SetCursor(LoadCursorW(nullptr, index >= 0 ? IDC_HAND : IDC_ARROW));
                 return TRUE;
@@ -3925,6 +4324,15 @@ int RunDockThread() {
     CreateTextures();
 
     LoadSettings();
+    g_dockOffsetX = ClampInt(Wh_GetIntValue(L"DockOffsetX", 0), -20000, 20000);
+    int storedDistance =
+        Wh_GetIntValue(L"DockBottomDistance", kMissingLocalValue);
+    if (storedDistance != kMissingLocalValue) {
+        g_dockBottomDistance = ClampInt(storedDistance, 0, 20000);
+    } else {
+        g_legacyOffsetY =
+            ClampInt(Wh_GetIntValue(L"DockOffsetY", 0), -20000, 20000);
+    }
     g_storedKeys = LoadDockKeys();
     g_lastItemCheckTime = std::chrono::steady_clock::now();
     if (auto* dropTarget = new (std::nothrow) DockDropTarget()) {
